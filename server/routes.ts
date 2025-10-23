@@ -1,13 +1,33 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, createLoginAudit } from "./auth";
+import passport from "passport";
 import { insertLinkSchema, insertGroupSchema } from "@shared/schema";
 import { hashIP, hashUserAgent } from "./lib/encryption";
+import argon2 from "argon2";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Setup new auth with OAuth providers
+  setupAuth(app, {
+    storage,
+    google: {
+      clientID: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    },
+    microsoft: {
+      clientID: process.env.MICROSOFT_CLIENT_ID || "",
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
+    },
+    linkedin: {
+      clientID: process.env.LINKEDIN_CLIENT_ID || "",
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET || "",
+    },
+    facebook: {
+      clientID: process.env.FACEBOOK_CLIENT_ID || "",
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET || "",
+    },
+  });
 
   // ============================================================================
   // AUTH ROUTES
@@ -16,18 +36,219 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user - allows unauthenticated to return null
   app.get("/api/auth/user", async (req: any, res) => {
     try {
-      // Check if user is authenticated
-      if (!req.isAuthenticated() || !req.user?.claims?.sub) {
+      if (!req.isAuthenticated() || !req.user?.id) {
         return res.json(null);
       }
 
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = await storage.getUser(req.user.id);
       res.json(user || null);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
+  });
+
+  // Google OAuth (only if credentials are provided)
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    app.get(
+      "/api/auth/google",
+      passport.authenticate("google", { scope: ["profile", "email"] })
+    );
+
+    app.get(
+      "/api/auth/google/callback",
+      passport.authenticate("google", { failureRedirect: "/login" }),
+      async (req, res) => {
+        await createLoginAudit(storage, {
+          userId: req.user?.id,
+          email: req.user?.email || "",
+          action: "login",
+          provider: "google",
+          ipAddress: req.ip || "",
+          userAgent: req.headers["user-agent"] || "",
+          success: true,
+        });
+        res.redirect("/dashboard");
+      }
+    );
+  }
+
+  // Microsoft OAuth (only if credentials are provided)
+  if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
+    app.get("/api/auth/microsoft", passport.authenticate("microsoft"));
+
+    app.get(
+      "/api/auth/microsoft/callback",
+      passport.authenticate("microsoft", { failureRedirect: "/login" }),
+      async (req, res) => {
+        await createLoginAudit(storage, {
+          userId: req.user?.id,
+          email: req.user?.email || "",
+          action: "login",
+          provider: "microsoft",
+          ipAddress: req.ip || "",
+          userAgent: req.headers["user-agent"] || "",
+          success: true,
+        });
+        res.redirect("/dashboard");
+      }
+    );
+  }
+
+  // LinkedIn OAuth (only if credentials are provided)
+  if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
+    app.get("/api/auth/linkedin", passport.authenticate("linkedin"));
+
+    app.get(
+      "/api/auth/linkedin/callback",
+      passport.authenticate("linkedin", { failureRedirect: "/login" }),
+      async (req, res) => {
+        await createLoginAudit(storage, {
+          userId: req.user?.id,
+          email: req.user?.email || "",
+          action: "login",
+          provider: "linkedin",
+          ipAddress: req.ip || "",
+          userAgent: req.headers["user-agent"] || "",
+          success: true,
+        });
+        res.redirect("/dashboard");
+      }
+    );
+  }
+
+  // Facebook OAuth (only if credentials are provided)
+  if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
+    app.get("/api/auth/facebook", passport.authenticate("facebook"));
+
+    app.get(
+      "/api/auth/facebook/callback",
+      passport.authenticate("facebook", { failureRedirect: "/login" }),
+      async (req, res) => {
+        await createLoginAudit(storage, {
+          userId: req.user?.id,
+          email: req.user?.email || "",
+          action: "login",
+          provider: "facebook",
+          ipAddress: req.ip || "",
+          userAgent: req.headers["user-agent"] || "",
+          success: true,
+        });
+        res.redirect("/dashboard");
+      }
+    );
+  }
+
+  // Local auth - Signup
+  app.post("/api/auth/signup", async (req: any, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+
+      if (!email || !password) {
+        return res
+          .status(400)
+          .json({ message: "Email and password are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      // Hash password
+      const passwordHash = await argon2.hash(password);
+
+      // Create user
+      const user = await storage.upsertUser({
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        passwordHash,
+        emailVerified: false,
+      });
+
+      // Log in the user
+      req.login(
+        {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
+        },
+        async (err: any) => {
+          if (err) {
+            return res.status(500).json({ message: "Failed to login after signup" });
+          }
+
+          await createLoginAudit(storage, {
+            userId: user.id,
+            email: user.email || "",
+            action: "signup",
+            provider: "local",
+            ipAddress: req.ip || "",
+            userAgent: req.headers["user-agent"] || "",
+            success: true,
+          });
+
+          res.status(201).json(user);
+        }
+      );
+    } catch (error) {
+      console.error("Error during signup:", error);
+      res.status(500).json({ message: "Failed to create account" });
+    }
+  });
+
+  // Local auth - Login
+  app.post("/api/auth/login", (req: any, res, next) => {
+    passport.authenticate("local", async (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
+      }
+
+      if (!user) {
+        await createLoginAudit(storage, {
+          email: req.body.email || "",
+          action: "login_failed",
+          provider: "local",
+          ipAddress: req.ip || "",
+          userAgent: req.headers["user-agent"] || "",
+          success: false,
+          failureReason: info?.message || "Invalid credentials",
+        });
+        return res.status(401).json({ message: info?.message || "Login failed" });
+      }
+
+      req.login(user, async (loginErr: any) => {
+        if (loginErr) {
+          return next(loginErr);
+        }
+
+        await createLoginAudit(storage, {
+          userId: user.id,
+          email: user.email || "",
+          action: "login",
+          provider: "local",
+          ipAddress: req.ip || "",
+          userAgent: req.headers["user-agent"] || "",
+          success: true,
+        });
+
+        res.json(user);
+      });
+    })(req, res, next);
+  });
+
+  // Logout
+  app.post("/api/auth/logout", (req: any, res) => {
+    req.logout((err: any) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
   });
 
   // ============================================================================
@@ -37,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all links for user
   app.get("/api/links", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const links = await storage.getLinks(userId);
       res.json(links);
     } catch (error) {
@@ -49,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single link by ID
   app.get("/api/links/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const link = await storage.getLinkById(req.params.id);
 
       if (!link) {
@@ -71,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new link
   app.post("/api/links", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Validate request body
       const validatedData = insertLinkSchema.parse(req.body);
@@ -90,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update link
   app.patch("/api/links/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify link exists and user owns it before updating
       const existingLink = await storage.getLinkById(req.params.id);
@@ -122,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Archive/Unarchive link
   app.patch("/api/links/:id/archive", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { archive } = req.body;
 
       const success = await storage.archiveLink(req.params.id, userId, archive);
@@ -141,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete link
   app.delete("/api/links/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify ownership before deleting
       const link = await storage.getLinkById(req.params.id);
@@ -172,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all groups for user
   app.get("/api/groups", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const groups = await storage.getGroups(userId);
       res.json(groups);
     } catch (error) {
@@ -184,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single group by ID
   app.get("/api/groups/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const group = await storage.getGroupById(req.params.id);
 
       if (!group) {
@@ -210,7 +431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new group
   app.post("/api/groups", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Validate request body
       const validatedData = insertGroupSchema.parse(req.body);
@@ -229,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update group
   app.patch("/api/groups/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify group exists and user owns it
       const existingGroup = await storage.getGroupById(req.params.id);
@@ -261,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete group
   app.delete("/api/groups/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify ownership before deleting
       const group = await storage.getGroupById(req.params.id);
@@ -288,7 +509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Invite members to group
   app.post("/api/groups/:id/invite", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { emails } = req.body;
 
       if (!Array.isArray(emails) || emails.length === 0) {
@@ -317,7 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get group members
   app.get("/api/groups/:id/members", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify group exists
       const group = await storage.getGroupById(req.params.id);
@@ -349,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Share link with groups
   app.post("/api/shares", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { linkId, targetType, groupIds } = req.body;
 
       if (!linkId || !targetType) {
@@ -418,7 +639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get shares for a link
   app.get("/api/shares/link/:linkId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify link exists and user owns it
       const link = await storage.getLinkById(req.params.linkId);
@@ -444,7 +665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Record a click event
   app.post("/api/clicks", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { linkId } = req.body;
 
       if (!linkId) {
@@ -500,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get click analytics for a link
   app.get("/api/clicks/link/:linkId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
 
       // Verify link ownership
       const link = await storage.getLinkById(req.params.linkId);
@@ -523,7 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get notifications for user
   app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const notifications = await storage.getNotifications(userId);
       res.json(notifications);
     } catch (error) {
@@ -535,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mark notification as read
   app.patch("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const success = await storage.markNotificationRead(req.params.id, userId);
 
       if (!success) {

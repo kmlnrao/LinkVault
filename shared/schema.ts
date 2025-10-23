@@ -28,19 +28,144 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 
-// Users table (required for Replit Auth)
+// Users table (extended for multi-provider auth)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  passwordHash: varchar("password_hash"), // For email/password auth
+  passwordSalt: varchar("password_salt"), // Salt for password hashing
+  mfaSecret: varchar("mfa_secret"), // TOTP secret for 2FA
+  mfaEnabled: boolean("mfa_enabled").default(false).notNull(),
+  mfaBackupCodes: text("mfa_backup_codes").array(), // Encrypted backup codes
+  lastLoginAt: timestamp("last_login_at"),
+  failedLoginAttempts: integer("failed_login_attempts").default(0).notNull(),
+  accountLockedUntil: timestamp("account_locked_until"),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
+
+// Auth Accounts table (for OAuth providers)
+export const authAccounts = pgTable(
+  "auth_accounts",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 50 }).notNull(), // google, microsoft, linkedin, facebook, replit
+    providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(), // Provider's user ID
+    accessToken: text("access_token"), // OAuth access token
+    refreshToken: text("refresh_token"), // OAuth refresh token
+    expiresAt: timestamp("expires_at"),
+    scope: varchar("scope", { length: 500 }), // OAuth scopes granted
+    profilePayload: jsonb("profile_payload"), // Raw profile data from provider
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("auth_accounts_user_idx").on(table.userId),
+    index("auth_accounts_provider_idx").on(table.provider, table.providerAccountId),
+  ]
+);
+
+export const authAccountsRelations = relations(authAccounts, ({ one }) => ({
+  user: one(users, {
+    fields: [authAccounts.userId],
+    references: [users.id],
+  }),
+}));
+
+export type AuthAccount = typeof authAccounts.$inferSelect;
+export const insertAuthAccountSchema = createInsertSchema(authAccounts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAuthAccount = z.infer<typeof insertAuthAccountSchema>;
+
+// Login Audit Logs table (for security monitoring)
+export const loginAuditLogs = pgTable(
+  "login_audit_logs",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // Nullable for failed attempts
+    email: varchar("email", { length: 255 }), // Store email for failed login attempts
+    action: varchar("action", { length: 50 }).notNull(), // login, logout, login_failed, password_reset, 2fa_enabled
+    provider: varchar("provider", { length: 50 }), // Which provider was used
+    ipAddress: varchar("ip_address", { length: 45 }), // IPv4 or IPv6
+    userAgent: varchar("user_agent", { length: 500 }),
+    success: boolean("success").notNull(),
+    failureReason: varchar("failure_reason", { length: 255 }), // wrong_password, account_locked, etc.
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("audit_logs_user_idx").on(table.userId),
+    index("audit_logs_created_idx").on(table.createdAt),
+    index("audit_logs_ip_idx").on(table.ipAddress),
+  ]
+);
+
+export const loginAuditLogsRelations = relations(loginAuditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [loginAuditLogs.userId],
+    references: [users.id],
+  }),
+}));
+
+export type LoginAuditLog = typeof loginAuditLogs.$inferSelect;
+export const insertLoginAuditLogSchema = createInsertSchema(loginAuditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertLoginAuditLog = z.infer<typeof insertLoginAuditLogSchema>;
+
+// Contacts table (for imported contacts)
+export const contacts = pgTable(
+  "contacts",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }), // Owner of the contact import
+    contactEmail: varchar("contact_email", { length: 255 }).notNull(),
+    contactName: varchar("contact_name", { length: 255 }),
+    contactPhone: varchar("contact_phone", { length: 50 }),
+    source: varchar("source", { length: 50 }).notNull(), // gmail, outlook, linkedin, facebook, csv
+    sourceId: varchar("source_id", { length: 255 }), // ID from source system
+    metadata: jsonb("metadata"), // Additional data from source
+    lastSyncedAt: timestamp("last_synced_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("contacts_user_idx").on(table.userId),
+    index("contacts_email_idx").on(table.contactEmail),
+    index("contacts_source_idx").on(table.source),
+  ]
+);
+
+export const contactsRelations = relations(contacts, ({ one }) => ({
+  user: one(users, {
+    fields: [contacts.userId],
+    references: [users.id],
+  }),
+}));
+
+export type Contact = typeof contacts.$inferSelect;
+export const insertContactSchema = createInsertSchema(contacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertContact = z.infer<typeof insertContactSchema>;
 
 // ============================================================================
 // REFERRAL LINKS

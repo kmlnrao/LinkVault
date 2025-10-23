@@ -6,6 +6,9 @@ import {
   shares,
   clickEvents,
   notifications,
+  authAccounts,
+  loginAuditLogs,
+  contacts,
   type User,
   type UpsertUser,
   type Link,
@@ -20,15 +23,39 @@ import {
   type InsertClickEvent,
   type Notification,
   type InsertNotification,
+  type AuthAccount,
+  type InsertAuthAccount,
+  type LoginAuditLog,
+  type InsertLoginAuditLog,
+  type Contact,
+  type InsertContact,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, desc, sql } from "drizzle-orm";
 import { encrypt, decrypt, generateInviteCode, generateShareToken } from "./lib/encryption";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+
+  // Auth account operations (OAuth providers)
+  createAuthAccount(authAccount: InsertAuthAccount): Promise<AuthAccount>;
+  getAuthAccountsByUser(userId: string): Promise<AuthAccount[]>;
+  getAuthAccountByProvider(provider: string, providerAccountId: string): Promise<AuthAccount | undefined>;
+  updateAuthAccount(id: string, updates: Partial<InsertAuthAccount>): Promise<AuthAccount | undefined>;
+
+  // Audit log operations
+  createAuditLog(log: InsertLoginAuditLog): Promise<LoginAuditLog>;
+  getAuditLogs(userId: string, limit?: number): Promise<LoginAuditLog[]>;
+
+  // Contact operations
+  createContact(contact: InsertContact): Promise<Contact>;
+  getContacts(userId: string, source?: string): Promise<Contact[]>;
+  updateContact(id: string, userId: string, updates: Partial<InsertContact>): Promise<Contact | undefined>;
+  deleteContact(id: string, userId: string): Promise<boolean>;
 
   // Link operations
   getLinks(userId: string): Promise<Link[]>;
@@ -89,6 +116,131 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  // ============================================================================
+  // AUTH ACCOUNT OPERATIONS
+  // ============================================================================
+
+  async createAuthAccount(authAccountData: InsertAuthAccount): Promise<AuthAccount> {
+    const [authAccount] = await db
+      .insert(authAccounts)
+      .values(authAccountData)
+      .returning();
+    return authAccount;
+  }
+
+  async getAuthAccountsByUser(userId: string): Promise<AuthAccount[]> {
+    return await db
+      .select()
+      .from(authAccounts)
+      .where(eq(authAccounts.userId, userId))
+      .orderBy(desc(authAccounts.createdAt));
+  }
+
+  async getAuthAccountByProvider(
+    provider: string,
+    providerAccountId: string
+  ): Promise<AuthAccount | undefined> {
+    const [authAccount] = await db
+      .select()
+      .from(authAccounts)
+      .where(
+        and(
+          eq(authAccounts.provider, provider),
+          eq(authAccounts.providerAccountId, providerAccountId)
+        )
+      );
+    return authAccount;
+  }
+
+  async updateAuthAccount(
+    id: string,
+    updates: Partial<InsertAuthAccount>
+  ): Promise<AuthAccount | undefined> {
+    const [authAccount] = await db
+      .update(authAccounts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(authAccounts.id, id))
+      .returning();
+    return authAccount;
+  }
+
+  // ============================================================================
+  // AUDIT LOG OPERATIONS
+  // ============================================================================
+
+  async createAuditLog(logData: InsertLoginAuditLog): Promise<LoginAuditLog> {
+    const [log] = await db.insert(loginAuditLogs).values(logData).returning();
+    return log;
+  }
+
+  async getAuditLogs(userId: string, limit: number = 100): Promise<LoginAuditLog[]> {
+    return await db
+      .select()
+      .from(loginAuditLogs)
+      .where(eq(loginAuditLogs.userId, userId))
+      .orderBy(desc(loginAuditLogs.createdAt))
+      .limit(limit);
+  }
+
+  // ============================================================================
+  // CONTACT OPERATIONS
+  // ============================================================================
+
+  async createContact(contactData: InsertContact): Promise<Contact> {
+    const [contact] = await db.insert(contacts).values(contactData).returning();
+    return contact;
+  }
+
+  async getContacts(userId: string, source?: string): Promise<Contact[]> {
+    if (source) {
+      return await db
+        .select()
+        .from(contacts)
+        .where(and(eq(contacts.userId, userId), eq(contacts.source, source)))
+        .orderBy(desc(contacts.createdAt));
+    }
+
+    return await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.userId, userId))
+      .orderBy(desc(contacts.createdAt));
+  }
+
+  async updateContact(
+    id: string,
+    userId: string,
+    updates: Partial<InsertContact>
+  ): Promise<Contact | undefined> {
+    const [contact] = await db
+      .update(contacts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
+      .returning();
+    return contact;
+  }
+
+  async deleteContact(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(contacts)
+      .where(and(eq(contacts.id, id), eq(contacts.userId, userId)));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 
   // ============================================================================

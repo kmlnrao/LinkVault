@@ -251,6 +251,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Request password reset
+  app.post("/api/auth/forgot-password", async (req: any, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Return success even if user doesn't exist to prevent email enumeration
+        return res.json({ message: "If an account exists with that email, a password reset link has been sent" });
+      }
+
+      // Generate secure random token
+      const crypto = await import("crypto");
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+      // Store token with 1 hour expiration
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token: hashedToken,
+        expiresAt,
+        used: false,
+      });
+
+      // TODO: Integrate email service to send password reset link
+      // The reset link should be: `${req.protocol}://${req.get("host")}/reset-password?token=${resetToken}`
+      // NEVER log the plaintext token - it should only be sent via secure email delivery
+
+      await createLoginAudit(storage, {
+        userId: user.id,
+        email: user.email || "",
+        action: "password_reset_requested",
+        provider: "local",
+        ipAddress: req.ip || "",
+        userAgent: req.headers["user-agent"] || "",
+        success: true,
+      });
+
+      res.json({ message: "If an account exists with that email, a password reset link has been sent" });
+    } catch (error) {
+      console.error("Error requesting password reset:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req: any, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      // Hash the token to match stored hash
+      const crypto = await import("crypto");
+      const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+      const resetToken = await storage.getPasswordResetToken(hashedToken);
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      if (resetToken.used) {
+        return res.status(400).json({ message: "Reset token has already been used" });
+      }
+
+      if (resetToken.expiresAt < new Date()) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+
+      // Hash new password with Argon2
+      const passwordHash = await argon2.hash(newPassword);
+
+      // Update user's password
+      await storage.updateUser(resetToken.userId, {
+        passwordHash,
+        failedLoginAttempts: 0,
+        accountLockedUntil: null,
+      });
+
+      // Mark token as used
+      await storage.markTokenAsUsed(hashedToken);
+
+      // Get user for audit log
+      const user = await storage.getUser(resetToken.userId);
+
+      await createLoginAudit(storage, {
+        userId: resetToken.userId,
+        email: user?.email || "",
+        action: "password_reset",
+        provider: "local",
+        ipAddress: req.ip || "",
+        userAgent: req.headers["user-agent"] || "",
+        success: true,
+      });
+
+      res.json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
   // ============================================================================
   // LINK ROUTES
   // ============================================================================

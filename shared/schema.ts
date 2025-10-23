@@ -127,6 +127,40 @@ export const insertLoginAuditLogSchema = createInsertSchema(loginAuditLogs).omit
 });
 export type InsertLoginAuditLog = z.infer<typeof insertLoginAuditLogSchema>;
 
+// Password Reset Tokens table
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: varchar("token", { length: 255 }).notNull().unique(), // Hashed token
+    expiresAt: timestamp("expires_at").notNull(), // Token expiration (1 hour)
+    used: boolean("used").default(false).notNull(), // Whether token has been used
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("password_reset_tokens_user_idx").on(table.userId),
+    index("password_reset_tokens_token_idx").on(table.token),
+    index("password_reset_tokens_expires_idx").on(table.expiresAt),
+  ]
+);
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResetTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+
 // Contacts table (for imported contacts)
 export const contacts = pgTable(
   "contacts",

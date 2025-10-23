@@ -1,0 +1,78 @@
+Project Name: ReferralLink Platform
+
+Project Concept:
+
+ReferralLink Platform is a secure, subscription-based web portal designed to help users collect, manage, and share referral links for credit cards, bank accounts, subscriptions, and other incentive-based programs. Many institutions offer sign-up bonuses for both the referrer and the new applicant, but users often don’t share links due to privacy concerns or social hesitation. This platform solves that problem by providing a private, secure, and organized environment for sharing and tracking referral links.
+
+Key Features:
+
+Secure Authentication & Privacy:
+Google, Microsoft, or email-based authentication ensures a secure login.
+All referral links are encrypted and can be shared only with selected groups or contacts.
+No public exposure—links are shared only within trusted groups or invited contacts.
+Organized Link Management:
+Users can categorize referral links (e.g., “Credit Cards,” “Bank Accounts,” “Subscriptions”).
+Links include metadata such as bonus value, expiration date, and visibility.
+Dashboard for viewing all personal links and shared links within groups.
+Private Groups & Contact Sharing:
+Create groups of friends or family to share links privately.
+Import contacts securely from Gmail, Outlook, LinkedIn, or Facebook.
+Share referral links with specific people or groups instead of public forums.
+Subscription & Analytics:
+Subscription-based model ensures platform sustainability.
+Users can track clicks and usage on their shared links.
+Analytics can show which referral links are most effective.
+OpenAPI & SDK:
+Full OpenAPI spec allows developers to integrate or extend functionality.
+TypeScript SDK enables easy integration into frontend or backend workflows.
+Robust Infrastructure:
+Next.js frontend with Tailwind CSS for a modern, responsive interface.
+PostgreSQL database for storing links, users, groups, and sharing data.
+Docker + Docker Compose for easy deployment.
+Benefits to Subscribers / Users:
+
+Maximize Personal Rewards:
+Users don’t miss out on sign-up bonuses because they now have a platform to securely share and manage referral links.
+Both referrers and applicants can benefit from rewards without awkwardly asking friends or family.
+Privacy & Security:
+Keeps referral links private within trusted groups.
+Prevents leakage of personal referral codes.
+Organized & Efficient:
+Users can easily track which links they’ve shared and with whom.
+Avoids duplicate submissions or lost referral codes.
+Easy Sharing:
+Securely invite friends or contacts to access shared links without using insecure channels like email or social media posts.
+Benefits to Institutions / Companies Offering Referral Bonuses:
+
+Increased Sign-ups: More people apply using referral links because they are easier to share securely.
+Trustworthy Referrals: Sharing within verified groups leads to higher-quality sign-ups.
+No Extra Marketing Cost: Users help promote their services through trusted connections.
+Tracking: The platform can optionally provide anonymized analytics to institutions about referral trends without exposing personal data.
+Value Proposition / Why this Platform is Needed:
+
+Currently, referral programs work but are underutilized because:
+
+People feel shy or uncomfortable sharing links directly.
+Referral links get lost in messages, emails, or social media posts.
+Users are unaware of potential sign-up bonuses available to them.
+ReferralLink Platform solves this by:
+
+Providing a centralized, private hub for all referral links.
+Allowing users to share with trust, increasing adoption and reward collection.
+Offering analytics and subscription features for engagement and monetization.
+Stakeholders & Target Audience:
+
+Primary Users:
+Individuals applying for credit cards, bank accounts, subscriptions, or services with referral programs.
+People who want to maximize rewards and track referrals securely.
+Institutions / Companies:
+Banks, fintech companies, subscription services, or any platform offering referral bonuses.
+Benefit from more effective and secure referrals without investing in additional marketing.
+Developers / Platform Owners:
+Gain revenue through subscription fees.
+Potentially partner with institutions for featured referral campaigns.
+Revenue & Monetization:
+
+Subscription model: Users pay a monthly or annual fee to access premium features (e.g., unlimited links, groups, analytics).
+Enterprise integrations: Option to provide anonymized referral analytics or featured referral promotions to institutions.
+Affiliate revenue: If allowed, a small percentage from bonuses or promotions could support the platform financially.

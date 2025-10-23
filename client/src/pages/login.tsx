@@ -53,36 +53,36 @@ export default function Login() {
     }
   };
 
-  const oauthProviders = [
-    {
-      name: "Google",
-      icon: SiGoogle,
-      color: "text-red-600",
-      href: "/api/auth/google",
-      available: true, // You could make this dynamic based on env vars
-    },
-    {
-      name: "Microsoft",
-      icon: Building2,
-      color: "text-blue-600",
-      href: "/api/auth/microsoft",
-      available: true,
-    },
-    {
-      name: "LinkedIn",
-      icon: SiLinkedin,
-      color: "text-blue-700",
-      href: "/api/auth/linkedin",
-      available: true,
-    },
-    {
-      name: "Facebook",
-      icon: SiFacebook,
-      color: "text-blue-500",
-      href: "/api/auth/facebook",
-      available: true,
-    },
-  ];
+  // OAuth providers - currently disabled (requires OAuth credentials configuration)
+  const oauthProviders: any[] = [];
+  
+  // Uncomment when OAuth credentials are configured:
+  // const oauthProviders = [
+  //   {
+  //     name: "Google",
+  //     icon: SiGoogle,
+  //     color: "text-red-600",
+  //     href: "/api/auth/google",
+  //   },
+  //   {
+  //     name: "Microsoft",
+  //     icon: Building2,
+  //     color: "text-blue-600",
+  //     href: "/api/auth/microsoft",
+  //   },
+  //   {
+  //     name: "LinkedIn",
+  //     icon: SiLinkedin,
+  //     color: "text-blue-700",
+  //     href: "/api/auth/linkedin",
+  //   },
+  //   {
+  //     name: "Facebook",
+  //     icon: SiFacebook,
+  //     color: "text-blue-500",
+  //     href: "/api/auth/facebook",
+  //   },
+  // ];
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted/30">
@@ -105,34 +105,38 @@ export default function Login() {
 
         {/* Login Card */}
         <Card className="p-6 space-y-6">
-          {/* OAuth Providers */}
-          <div className="space-y-3">
-            {oauthProviders.map((provider) => (
-              <Button
-                key={provider.name}
-                variant="outline"
-                className="w-full"
-                asChild
-                data-testid={`button-oauth-${provider.name.toLowerCase()}`}
-              >
-                <a href={provider.href}>
-                  <provider.icon className={`mr-2 h-4 w-4 ${provider.color}`} />
-                  Continue with {provider.name}
-                </a>
-              </Button>
-            ))}
-          </div>
+          {/* OAuth Providers - shown only if configured */}
+          {oauthProviders.length > 0 && (
+            <>
+              <div className="space-y-3">
+                {oauthProviders.map((provider) => (
+                  <Button
+                    key={provider.name}
+                    variant="outline"
+                    className="w-full"
+                    asChild
+                    data-testid={`button-oauth-${provider.name.toLowerCase()}`}
+                  >
+                    <a href={provider.href}>
+                      <provider.icon className={`mr-2 h-4 w-4 ${provider.color}`} />
+                      Continue with {provider.name}
+                    </a>
+                  </Button>
+                ))}
+              </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Or continue with email
-              </span>
-            </div>
-          </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Or continue with email
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">

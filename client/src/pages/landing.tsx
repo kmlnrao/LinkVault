@@ -104,7 +104,7 @@ export default function Landing() {
             </a>
           </nav>
           <Button asChild data-testid="button-login">
-            <a href="/api/login">Sign In</a>
+            <Link href="/login">Sign In</Link>
           </Button>
         </div>
       </header>
@@ -129,9 +129,9 @@ export default function Landing() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button size="lg" asChild data-testid="button-get-started">
-                  <a href="/api/login">
+                  <Link href="/login">
                     Get Started <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
                   <a href="#features">Learn More</a>
@@ -285,9 +285,9 @@ export default function Landing() {
             referral links.
           </p>
           <Button size="lg" asChild data-testid="button-cta-bottom">
-            <a href="/api/login">
+            <Link href="/login">
               Start For Free <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
+            </Link>
           </Button>
           <p className="text-sm text-muted-foreground">
             No credit card required • Free forever plan available

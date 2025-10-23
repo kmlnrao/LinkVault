@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userAgent: req.headers["user-agent"] || "",
           success: true,
         });
-        res.redirect("/dashboard");
+        res.redirect("/");
       }
     );
   }
@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userAgent: req.headers["user-agent"] || "",
           success: true,
         });
-        res.redirect("/dashboard");
+        res.redirect("/");
       }
     );
   }
@@ -112,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userAgent: req.headers["user-agent"] || "",
           success: true,
         });
-        res.redirect("/dashboard");
+        res.redirect("/");
       }
     );
   }
@@ -134,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userAgent: req.headers["user-agent"] || "",
           success: true,
         });
-        res.redirect("/dashboard");
+        res.redirect("/");
       }
     );
   }

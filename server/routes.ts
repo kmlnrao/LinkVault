@@ -241,15 +241,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })(req, res, next);
   });
 
-  // Logout
-  app.post("/api/auth/logout", (req: any, res) => {
+  // Logout (POST for API, GET for link redirect)
+  const handleLogout = (req: any, res: any) => {
     req.logout((err: any) => {
       if (err) {
+        console.error("Logout error:", err);
         return res.status(500).json({ message: "Failed to logout" });
       }
-      res.json({ message: "Logged out successfully" });
+      req.session.destroy((destroyErr: any) => {
+        if (destroyErr) {
+          console.error("Session destroy error:", destroyErr);
+        }
+        res.clearCookie("connect.sid");
+        // For GET requests, redirect to login page
+        if (req.method === "GET") {
+          return res.redirect("/login");
+        }
+        // For POST requests, return JSON
+        res.json({ message: "Logged out successfully" });
+      });
     });
-  });
+  };
+
+  app.post("/api/auth/logout", handleLogout);
+  app.get("/api/logout", handleLogout);
 
   // Request password reset
   app.post("/api/auth/forgot-password", async (req: any, res) => {

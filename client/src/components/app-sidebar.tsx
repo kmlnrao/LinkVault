@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
   {
@@ -58,7 +60,8 @@ const menuItems = [
 
 export function AppSidebar() {
   const { user } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const getInitials = () => {
     if (!user) return "U";
@@ -74,6 +77,32 @@ export function AppSidebar() {
       return `${user.firstName} ${user.lastName}`;
     }
     return user.email || "User";
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await apiRequest("/api/auth/logout", "POST");
+      if (response.ok) {
+        toast({
+          title: "Logged out",
+          description: "You've been successfully logged out.",
+        });
+        setLocation("/login");
+        window.location.reload();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Logout failed",
+          description: "Could not log out. Please try again.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An error occurred during logout.",
+      });
+    }
   };
 
   return (
@@ -148,11 +177,9 @@ export function AppSidebar() {
                     <span>Settings</span>
                   </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a href="/api/logout" data-testid="button-logout">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </a>
+                <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

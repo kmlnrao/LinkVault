@@ -27,7 +27,7 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const response = await apiRequest("/api/auth/signup", "POST", formData);
+      const response = await apiRequest("POST", "/api/auth/signup", formData);
 
       if (response.ok) {
         toast({

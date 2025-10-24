@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
+import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -61,16 +62,32 @@ export function LinkDialog({ open, onOpenChange, link }: LinkDialogProps) {
   const form = useForm<LinkFormValues>({
     resolver: zodResolver(linkFormSchema),
     defaultValues: {
-      title: link?.title || "",
-      urlEncrypted: link?.urlEncrypted || "",
-      institution: link?.institution || "",
-      category: link?.category || "",
-      notesEncrypted: link?.notesEncrypted || "",
-      bonusValue: link?.bonusValue || "",
-      expiresAt: link?.expiresAt ? new Date(link.expiresAt).toISOString().slice(0, 16) : "",
-      visibility: link?.visibility || "private",
+      title: "",
+      urlEncrypted: "",
+      institution: "",
+      category: "",
+      notesEncrypted: "",
+      bonusValue: "",
+      expiresAt: "",
+      visibility: "private",
     },
   });
+
+  // Reset form when link changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        title: link?.title || "",
+        urlEncrypted: link?.urlEncrypted || "",
+        institution: link?.institution || "",
+        category: link?.category || "",
+        notesEncrypted: link?.notesEncrypted || "",
+        bonusValue: link?.bonusValue || "",
+        expiresAt: link?.expiresAt ? new Date(link.expiresAt).toISOString().slice(0, 16) : "",
+        visibility: link?.visibility || "private",
+      });
+    }
+  }, [link, open, form]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: LinkFormValues) => {

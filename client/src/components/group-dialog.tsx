@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
+import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -56,11 +57,22 @@ export function GroupDialog({ open, onOpenChange, group }: GroupDialogProps) {
   const form = useForm<GroupFormValues>({
     resolver: zodResolver(groupFormSchema),
     defaultValues: {
-      name: group?.name || "",
-      description: group?.description || "",
-      type: group?.type || "friends",
+      name: "",
+      description: "",
+      type: "friends",
     },
   });
+
+  // Reset form when group changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: group?.name || "",
+        description: group?.description || "",
+        type: group?.type || "friends",
+      });
+    }
+  }, [group, open, form]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: GroupFormValues) => {

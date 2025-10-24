@@ -31,13 +31,15 @@ import type { Group } from "@shared/schema";
 import { GroupDialog } from "@/components/group-dialog";
 import { InviteMembersDialog } from "@/components/invite-members-dialog";
 
+type GroupWithCounts = Group & { memberCount: number; linkCount: number };
+
 export default function GroupsPage() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupWithCounts | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -52,7 +54,7 @@ export default function GroupsPage() {
     }
   }, [isAuthenticated, authLoading, toast]);
 
-  const { data: groups = [], isLoading } = useQuery<Group[]>({
+  const { data: groups = [], isLoading } = useQuery<GroupWithCounts[]>({
     queryKey: ["/api/groups"],
     enabled: isAuthenticated,
   });
@@ -95,12 +97,12 @@ export default function GroupsPage() {
       group.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleEdit = (group: Group) => {
+  const handleEdit = (group: GroupWithCounts) => {
     setSelectedGroup(group);
     setIsGroupDialogOpen(true);
   };
 
-  const handleInvite = (group: Group) => {
+  const handleInvite = (group: GroupWithCounts) => {
     setSelectedGroup(group);
     setIsInviteDialogOpen(true);
   };
@@ -274,11 +276,11 @@ export default function GroupsPage() {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      <span>0 members</span>
+                      <span>{group.memberCount} {group.memberCount === 1 ? 'member' : 'members'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Link2 className="h-4 w-4" />
-                      <span>0 links</span>
+                      <span>{group.linkCount} {group.linkCount === 1 ? 'link' : 'links'}</span>
                     </div>
                   </div>
                   <Button

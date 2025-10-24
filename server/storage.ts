@@ -393,7 +393,7 @@ export class DatabaseStorage implements IStorage {
   // GROUP OPERATIONS
   // ============================================================================
 
-  async getGroups(userId: string): Promise<Group[]> {
+  async getGroups(userId: string): Promise<(Group & { memberCount: number; linkCount: number })[]> {
     // Get groups owned by user or where user is a member
     const userGroups = await db
       .select({ group: groups })
@@ -407,7 +407,20 @@ export class DatabaseStorage implements IStorage {
       new Map(userGroups.map((item) => [item.group.id, item.group])).values()
     );
 
-    return uniqueGroups;
+    // Get member and link counts for each group
+    const groupsWithCounts = await Promise.all(
+      uniqueGroups.map(async (group) => {
+        const members = await this.getGroupMembers(group.id);
+        const groupShares = await this.getSharesByGroup(group.id);
+        return {
+          ...group,
+          memberCount: members.length,
+          linkCount: groupShares.length,
+        };
+      })
+    );
+
+    return groupsWithCounts;
   }
 
   async getGroupById(id: string): Promise<Group | undefined> {
@@ -519,6 +532,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(shares)
       .where(eq(shares.sharedById, userId))
+      .orderBy(desc(shares.createdAt));
+  }
+
+  async getSharesByGroup(groupId: string): Promise<Share[]> {
+    return await db
+      .select()
+      .from(shares)
+      .where(and(eq(shares.targetType, "group"), eq(shares.targetId, groupId)))
       .orderBy(desc(shares.createdAt));
   }
 

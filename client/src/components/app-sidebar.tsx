@@ -83,12 +83,9 @@ export function AppSidebar() {
     try {
       const response = await apiRequest("/api/auth/logout", "POST");
       if (response.ok) {
-        toast({
-          title: "Logged out",
-          description: "You've been successfully logged out.",
-        });
-        setLocation("/login");
-        window.location.reload();
+        // Redirect to login immediately without showing toast
+        // (toast won't be visible during page navigation anyway)
+        window.location.href = "/login";
       } else {
         toast({
           variant: "destructive",
@@ -97,6 +94,7 @@ export function AppSidebar() {
         });
       }
     } catch (error) {
+      console.error("Logout error:", error);
       toast({
         variant: "destructive",
         title: "Error",

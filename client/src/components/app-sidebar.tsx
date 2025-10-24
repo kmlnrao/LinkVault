@@ -175,7 +175,13 @@ export function AppSidebar() {
                     <span>Settings</span>
                   </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
+                <DropdownMenuItem 
+                  data-testid="button-logout"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    handleLogout();
+                  }}
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

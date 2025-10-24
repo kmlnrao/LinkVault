@@ -1,4 +1,4 @@
-# ReferralLink Platform - Design Guidelines
+# LinkVault - Design Guidelines
 
 ## Design Approach
 

@@ -1,4 +1,4 @@
-# 🎯 Test Scenario - Multi-User Group Sharing
+# 🎯 LinkVault Test Scenario - Multi-User Group Sharing
 
 ## ✅ Scenario Successfully Created!
 

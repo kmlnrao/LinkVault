@@ -32,7 +32,7 @@ export default function Signup() {
       if (response.ok) {
         toast({
           title: "Account created!",
-          description: "Welcome to ReferralLink. You're now signed in.",
+          description: "Welcome to LinkVault. You're now signed in.",
         });
         setLocation("/");
       } else {
@@ -73,7 +73,7 @@ export default function Signup() {
               <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center">
                 <Share2 className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-semibold tracking-tight">ReferralLink</span>
+              <span className="text-2xl font-semibold tracking-tight">LinkVault</span>
             </div>
           </Link>
           <h1 className="text-3xl font-semibold tracking-tight">Create an account</h1>

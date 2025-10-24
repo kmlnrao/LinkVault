@@ -1,8 +1,8 @@
-# ReferralLink Platform
+# LinkVault
 
 ## Overview
 
-ReferralLink Platform is a secure, subscription-based web application for managing and sharing referral links for credit cards, bank accounts, and other incentive-based programs. The platform emphasizes privacy and security by allowing users to share referral links only within trusted private groups rather than public forums. Users can organize their links by category, track click analytics, and manage group memberships to maximize rewards while maintaining control over who sees their referral codes.
+LinkVault is a secure, subscription-based web application for managing and sharing referral links for credit cards, bank accounts, and other incentive-based programs. The platform emphasizes privacy and security by allowing users to share referral links only within trusted private groups rather than public forums. Users can organize their links by category, track click analytics, and manage group memberships to maximize rewards while maintaining control over who sees their referral codes.
 
 ## User Preferences
 

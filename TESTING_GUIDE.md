@@ -1,4 +1,4 @@
-# ReferralLink Platform - End-to-End Testing Guide
+# LinkVault - End-to-End Testing Guide
 
 ## Overview
 This guide demonstrates how to test the complete multi-user referral link sharing workflow using the group invitation system.

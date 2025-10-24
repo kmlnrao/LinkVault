@@ -85,7 +85,7 @@ export function AppSidebar() {
               <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
                 <Link2 className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-lg font-semibold tracking-tight">ReferralLink</span>
+              <span className="text-lg font-semibold tracking-tight">LinkVault</span>
             </div>
           </div>
         </SidebarGroup>

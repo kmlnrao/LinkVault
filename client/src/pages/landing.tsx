@@ -90,7 +90,7 @@ export default function Landing() {
             <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
               <Share2 className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-semibold tracking-tight">ReferralLink</span>
+            <span className="text-xl font-semibold tracking-tight">LinkVault</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">

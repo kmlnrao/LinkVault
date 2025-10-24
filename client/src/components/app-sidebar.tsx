@@ -81,7 +81,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      const response = await apiRequest("/api/auth/logout", "POST");
+      const response = await apiRequest("POST", "/api/auth/logout");
       if (response.ok) {
         // Redirect to login immediately without showing toast
         // (toast won't be visible during page navigation anyway)

@@ -34,7 +34,8 @@ export default function Signup() {
           title: "Account created!",
           description: "Welcome to LinkVault. You're now signed in.",
         });
-        setLocation("/");
+        // Force a full page reload to ensure auth state is updated
+        window.location.href = "/";
       } else {
         const data = await response.json();
         toast({

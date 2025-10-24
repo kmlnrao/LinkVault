@@ -33,7 +33,8 @@ export default function Login() {
           title: "Welcome back!",
           description: "You've successfully logged in.",
         });
-        setLocation("/");
+        // Force a full page reload to ensure auth state is updated
+        window.location.href = "/";
       } else {
         const data = await response.json();
         toast({

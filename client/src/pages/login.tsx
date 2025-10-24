@@ -53,36 +53,14 @@ export default function Login() {
     }
   };
 
-  // OAuth providers - currently disabled (requires OAuth credentials configuration)
-  const oauthProviders: any[] = [];
-  
-  // Uncomment when OAuth credentials are configured:
-  // const oauthProviders = [
-  //   {
-  //     name: "Google",
-  //     icon: SiGoogle,
-  //     color: "text-red-600",
-  //     href: "/api/auth/google",
-  //   },
-  //   {
-  //     name: "Microsoft",
-  //     icon: Building2,
-  //     color: "text-blue-600",
-  //     href: "/api/auth/microsoft",
-  //   },
-  //   {
-  //     name: "LinkedIn",
-  //     icon: SiLinkedin,
-  //     color: "text-blue-700",
-  //     href: "/api/auth/linkedin",
-  //   },
-  //   {
-  //     name: "Facebook",
-  //     icon: SiFacebook,
-  //     color: "text-blue-500",
-  //     href: "/api/auth/facebook",
-  //   },
-  // ];
+  const oauthProviders = [
+    {
+      name: "Google",
+      icon: SiGoogle,
+      color: "text-red-600",
+      href: "/api/auth/google",
+    },
+  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted/30">

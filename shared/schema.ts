@@ -196,6 +196,7 @@ export const contactsRelations = relations(contacts, ({ one }) => ({
 export type Contact = typeof contacts.$inferSelect;
 export const insertContactSchema = createInsertSchema(contacts).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -244,6 +245,7 @@ export const linksRelations = relations(links, ({ one, many }) => ({
 export type Link = typeof links.$inferSelect;
 export const insertLinkSchema = createInsertSchema(links).omit({
   id: true,
+  ownerId: true,
   clickCount: true,
   createdAt: true,
   updatedAt: true,
@@ -287,6 +289,7 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
 export type Group = typeof groups.$inferSelect;
 export const insertGroupSchema = createInsertSchema(groups).omit({
   id: true,
+  ownerId: true,
   createdAt: true,
   updatedAt: true,
   inviteCode: true,
@@ -378,6 +381,7 @@ export const sharesRelations = relations(shares, ({ one }) => ({
 export type Share = typeof shares.$inferSelect;
 export const insertShareSchema = createInsertSchema(shares).omit({
   id: true,
+  sharedById: true,
   createdAt: true,
   shareToken: true,
 });
@@ -467,6 +471,7 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 export type Notification = typeof notifications.$inferSelect;
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
+  userId: true,
   createdAt: true,
   isRead: true,
 });

@@ -61,7 +61,7 @@ export interface IStorage {
   deleteExpiredTokens(): Promise<void>;
 
   // Contact operations
-  createContact(contact: InsertContact): Promise<Contact>;
+  createContact(userId: string, contact: InsertContact): Promise<Contact>;
   getContacts(userId: string, source?: string): Promise<Contact[]>;
   updateContact(id: string, userId: string, updates: Partial<InsertContact>): Promise<Contact | undefined>;
   deleteContact(id: string, userId: string): Promise<boolean>;
@@ -88,7 +88,7 @@ export interface IStorage {
   getGroupMembers(groupId: string): Promise<GroupMembership[]>;
 
   // Share operations
-  createShare(share: InsertShare): Promise<Share>;
+  createShare(sharedById: string, share: InsertShare): Promise<Share>;
   getSharesByLink(linkId: string): Promise<Share[]>;
   getSharesByUser(userId: string): Promise<Share[]>;
 
@@ -98,7 +98,7 @@ export interface IStorage {
 
   // Notification operations
   getNotifications(userId: string): Promise<Notification[]>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
+  createNotification(userId: string, notification: InsertNotification): Promise<Notification>;
   markNotificationRead(id: string, userId: string): Promise<boolean>;
 }
 
@@ -242,8 +242,8 @@ export class DatabaseStorage implements IStorage {
   // CONTACT OPERATIONS
   // ============================================================================
 
-  async createContact(contactData: InsertContact): Promise<Contact> {
-    const [contact] = await db.insert(contacts).values(contactData).returning();
+  async createContact(userId: string, contactData: InsertContact): Promise<Contact> {
+    const [contact] = await db.insert(contacts).values({ ...contactData, userId }).returning();
     return contact;
   }
 
@@ -495,13 +495,14 @@ export class DatabaseStorage implements IStorage {
   // SHARE OPERATIONS
   // ============================================================================
 
-  async createShare(shareData: InsertShare): Promise<Share> {
+  async createShare(sharedById: string, shareData: InsertShare): Promise<Share> {
     const shareToken = generateShareToken();
 
     const [share] = await db
       .insert(shares)
       .values({
         ...shareData,
+        sharedById,
         shareToken,
       })
       .returning();
@@ -555,11 +556,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNotification(
+    userId: string,
     notificationData: InsertNotification
   ): Promise<Notification> {
     const [notification] = await db
       .insert(notifications)
-      .values(notificationData)
+      .values({ ...notificationData, userId })
       .returning();
     return notification;
   }

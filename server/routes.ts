@@ -717,9 +717,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          const share = await storage.createShare({
+          const share = await storage.createShare(userId, {
             linkId,
-            sharedById: userId,
             targetType: "group",
             targetId: groupId,
           });
@@ -729,8 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const members = await storage.getGroupMembers(groupId);
           for (const member of members) {
             if (member.userId !== userId) {
-              await storage.createNotification({
-                userId: member.userId,
+              await storage.createNotification(member.userId, {
                 type: "link_shared",
                 title: "New link shared",
                 message: `${link.title} was shared with your group`,

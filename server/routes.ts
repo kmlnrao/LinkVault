@@ -654,9 +654,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only group owner can invite members" });
       }
 
-      // TODO: Send invitation emails
-      // For now, just return success
-      res.json({ success: true, invitedCount: emails.length });
+      // Get inviter info
+      const inviter = await storage.getUser(userId);
+      const inviterName = inviter ? `${inviter.firstName} ${inviter.lastName}` : "Someone";
+
+      let successCount = 0;
+      let notFoundEmails: string[] = [];
+
+      // Create notifications for users who have accounts
+      for (const email of emails) {
+        const targetUser = await storage.getUserByEmail(email);
+        
+        if (targetUser) {
+          // Check if user is already a member
+          const members = await storage.getGroupMembers(group.id);
+          const isAlreadyMember = members.some(m => m.userId === targetUser.id);
+          
+          if (!isAlreadyMember) {
+            // Create notification for the invited user
+            await storage.createNotification(targetUser.id, {
+              type: "group_invite",
+              title: `Group Invitation from ${inviterName}`,
+              message: `${inviterName} invited you to join "${group.name}"`,
+              groupId: group.id,
+            });
+            successCount++;
+          }
+        } else {
+          notFoundEmails.push(email);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        invitedCount: successCount,
+        notFoundEmails: notFoundEmails.length > 0 ? notFoundEmails : undefined,
+        message: notFoundEmails.length > 0 
+          ? `Invited ${successCount} users. ${notFoundEmails.length} email(s) not found - they need to sign up first.`
+          : `Successfully invited ${successCount} user(s)`
+      });
     } catch (error) {
       console.error("Error inviting members:", error);
       res.status(500).json({ message: "Failed to invite members" });
@@ -893,6 +929,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error marking notification as read:", error);
       res.status(500).json({ message: "Failed to update notification" });
+    }
+  });
+
+  // Accept group invitation
+  app.post("/api/notifications/:id/accept", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get notification
+      const notifications = await storage.getNotifications(userId);
+      const notification = notifications.find(n => n.id === req.params.id);
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+
+      if (notification.type !== "group_invite") {
+        return res.status(400).json({ message: "This notification is not a group invitation" });
+      }
+
+      if (!notification.groupId) {
+        return res.status(400).json({ message: "Invalid invitation - no group specified" });
+      }
+
+      // Verify group still exists
+      const group = await storage.getGroupById(notification.groupId);
+      if (!group) {
+        // Mark notification as read and return error
+        await storage.markNotificationRead(req.params.id, userId);
+        return res.status(404).json({ message: "This group no longer exists" });
+      }
+
+      // Check if already a member
+      const members = await storage.getGroupMembers(notification.groupId);
+      const isAlreadyMember = members.some(m => m.userId === userId);
+
+      if (isAlreadyMember) {
+        // Mark notification as read
+        await storage.markNotificationRead(req.params.id, userId);
+        return res.status(400).json({ message: "You are already a member of this group" });
+      }
+
+      // Add user to group
+      await storage.addGroupMember({
+        groupId: notification.groupId,
+        userId,
+        role: "member",
+      });
+
+      // Mark notification as read
+      await storage.markNotificationRead(req.params.id, userId);
+
+      res.json({ success: true, message: `You joined "${group.name}"` });
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      res.status(500).json({ message: "Failed to accept invitation" });
+    }
+  });
+
+  // Decline group invitation
+  app.post("/api/notifications/:id/decline", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get notification
+      const notifications = await storage.getNotifications(userId);
+      const notification = notifications.find(n => n.id === req.params.id);
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+
+      if (notification.type !== "group_invite") {
+        return res.status(400).json({ message: "This notification is not a group invitation" });
+      }
+
+      // Simply mark as read (declining = ignoring)
+      await storage.markNotificationRead(req.params.id, userId);
+
+      res.json({ success: true, message: "Invitation declined" });
+    } catch (error) {
+      console.error("Error declining invitation:", error);
+      res.status(500).json({ message: "Failed to decline invitation" });
     }
   });
 

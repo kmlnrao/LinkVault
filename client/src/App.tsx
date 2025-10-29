@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { NotificationBell } from "@/components/notification-bell";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
@@ -60,6 +61,7 @@ function AppLayout() {
             <div className="flex flex-col flex-1 overflow-hidden">
               <header className="flex items-center justify-between h-14 px-4 border-b bg-background">
                 <SidebarTrigger data-testid="button-sidebar-toggle" />
+                <NotificationBell />
               </header>
               <main className="flex-1 overflow-hidden">
                 <Router />

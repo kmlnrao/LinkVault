@@ -36,16 +36,33 @@ export function InviteMembersDialog({
   const inviteMutation = useMutation({
     mutationFn: async (emailList: string[]) => {
       if (!group) return;
-      await apiRequest("POST", `/api/groups/${group.id}/invite`, {
+      const response = await apiRequest("POST", `/api/groups/${group.id}/invite`, {
         emails: emailList,
       });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to send invitations");
+      }
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       toast({
         title: "Invitations sent",
-        description: "Members have been invited to join the group.",
+        description: data.message || "Members have been invited to join the group.",
       });
+      
+      // Show warning if some emails were not found
+      if (data.notFoundEmails && data.notFoundEmails.length > 0) {
+        setTimeout(() => {
+          toast({
+            title: "Some invitations not sent",
+            description: `${data.notFoundEmails.length} user(s) need to sign up first: ${data.notFoundEmails.join(", ")}`,
+            variant: "default",
+          });
+        }, 500);
+      }
+      
       onOpenChange(false);
       setEmails([]);
       setEmail("");

@@ -2,9 +2,9 @@
 
 ## Test User Credentials
 
-### 👤 Alice Smith (Group Owner)
+### 👤 Rao Patel (Group Owner)
 ```
-Email:    alice@example.com
+Email:    kmlnrao@example.com
 Password: SecurePass123!
 ```
 **Owns**: 3 referral links, 1 group  
@@ -12,13 +12,13 @@ Password: SecurePass123!
 
 ---
 
-### 👤 Bob Johnson (Group Member)
+### 👤 Vijay Kumar (Group Member)
 ```
-Email:    bob@example.com
+Email:    vijay@example.com
 Password: SecurePass456!
 ```
 **Member of**: Family Credit Cards group  
-**Can see**: 3 shared links from Alice  
+**Can see**: 3 shared links from Rao  
 **Has**: 3 unread notifications
 
 ---
@@ -27,7 +27,7 @@ Password: SecurePass456!
 
 **Name**: Family Credit Cards  
 **Invite Code**: `51a6e38244e7804503ef34b4af2b8388`  
-**Members**: Alice (owner), Bob (member)
+**Members**: Rao (owner), Vijay (member)
 
 ---
 
@@ -42,7 +42,7 @@ Password: SecurePass456!
 ## 🚀 Quick Start
 
 1. Go to `/login`
-2. Use Alice or Bob's credentials
+2. Use Rao or Vijay's credentials
 3. Explore Groups and Links pages
 4. See how group sharing works!
 

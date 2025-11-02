@@ -2,20 +2,20 @@
 
 ## ✅ Scenario Successfully Created!
 
-The complete test scenario from TESTING_GUIDE.md has been created in your database. You can now log in as either Alice or Bob to explore the multi-user group sharing functionality.
+The complete test scenario from TESTING_GUIDE.md has been created in your database. You can now log in as either Rao or Vijay to explore the multi-user group sharing functionality.
 
 ---
 
 ## 👥 Test Users
 
-### 👤 Alice Smith (Group Owner)
-- **Email**: `alice@example.com`
+### 👤 Rao Patel (Group Owner)
+- **Email**: `kmlnrao@example.com`
 - **Password**: `SecurePass123!`
 - **Role**: Group Owner
 - **Created**: 3 referral links, 1 group
 
-### 👤 Bob Johnson (Group Member)
-- **Email**: `bob@example.com`
+### 👤 Vijay Kumar (Group Member)
+- **Email**: `vijay@example.com`
 - **Password**: `SecurePass456!`
 - **Role**: Group Member
 - **Status**: Member of "Family Credit Cards" group
@@ -27,15 +27,15 @@ The complete test scenario from TESTING_GUIDE.md has been created in your databa
 **Group Name**: Family Credit Cards  
 **Type**: Family  
 **Description**: Share premium credit card referral links with trusted family members  
-**Owner**: Alice Smith  
-**Members**: 2 (Alice as owner, Bob as member)  
+**Owner**: Rao Patel  
+**Members**: 2 (Rao as owner, Vijay as member)  
 **Invite Code**: `51a6e38244e7804503ef34b4af2b8388`
 
 ---
 
 ## 🔗 Shared Referral Links (3)
 
-All three links are owned by Alice and shared with the "Family Credit Cards" group:
+All three links are owned by Rao and shared with the "Family Credit Cards" group:
 
 ### 1. Chase Sapphire Preferred
 - **Institution**: Chase
@@ -62,7 +62,7 @@ All three links are owned by Alice and shared with the "Family Credit Cards" gro
 
 ## 🔔 Notifications
 
-Bob has **3 unread notifications**:
+Vijay has **3 unread notifications**:
 - "Chase Sapphire Preferred was shared with your group"
 - "American Express Platinum was shared with your group"
 - "Capital One Venture X was shared with your group"
@@ -71,51 +71,51 @@ Bob has **3 unread notifications**:
 
 ## 🎮 How to Explore the Scenario
 
-### Option 1: Login as Alice (Group Owner)
+### Option 1: Login as Rao (Group Owner)
 
 1. **Navigate to**: `/login`
 2. **Enter credentials**:
-   - Email: `alice@example.com`
+   - Email: `kmlnrao@example.com`
    - Password: `SecurePass123!`
 3. **Click**: "Login" button
 
-**What you'll see as Alice**:
+**What you'll see as Rao**:
 - ✅ Dashboard showing your groups and links
 - ✅ "Family Credit Cards" group in Groups page
 - ✅ 3 referral links in Links page
 - ✅ Each link marked as "Shared" with group indicator
-- ✅ Group members list showing Alice (owner) and Bob (member)
+- ✅ Group members list showing Rao (owner) and Vijay (member)
 - ✅ Ability to manage group settings and members
-- ✅ Analytics showing if Bob has clicked any links
+- ✅ Analytics showing if Vijay has clicked any links
 
-**Things you can try as Alice**:
+**Things you can try as Rao**:
 - View group details and member list
 - Edit group description
 - Create new referral links
 - Share additional links with the group
 - View click analytics on your links
 - Generate new invite codes
-- Manage group members (remove Bob, change roles, etc.)
+- Manage group members (remove Vijay, change roles, etc.)
 
 ---
 
-### Option 2: Login as Bob (Group Member)
+### Option 2: Login as Vijay (Group Member)
 
 1. **Navigate to**: `/login`
 2. **Enter credentials**:
-   - Email: `bob@example.com`
+   - Email: `vijay@example.com`
    - Password: `SecurePass456!`
 3. **Click**: "Login" button
 
-**What you'll see as Bob**:
+**What you'll see as Vijay**:
 - ✅ "Family Credit Cards" group in Groups page
 - ✅ 3 notifications about new shared links
-- ✅ Access to all 3 referral links shared by Alice
+- ✅ Access to all 3 referral links shared by Rao
 - ✅ Ability to view link details and copy referral URLs
 - ✅ Analytics showing when you click links
 - ✅ Your role shown as "member"
 
-**Things you can try as Bob**:
+**Things you can try as Vijay**:
 - Click on notifications to view shared links
 - Navigate to "Family Credit Cards" group
 - View all shared links in the group
@@ -129,46 +129,46 @@ Bob has **3 unread notifications**:
 
 ## 🧪 Test Workflows to Try
 
-### Workflow 1: Bob Views Shared Links
-1. Login as Bob
+### Workflow 1: Vijay Views Shared Links
+1. Login as Vijay
 2. Click "Groups" in sidebar
 3. Click on "Family Credit Cards" group
-4. See all 3 shared links from Alice
+4. See all 3 shared links from Rao
 5. Click on "Chase Sapphire Preferred"
 6. View link details including bonus value and notes
 7. Copy the referral URL
 8. **Expected**: URL is decrypted and ready to use
 
-### Workflow 2: Alice Monitors Group Activity
-1. Login as Alice
+### Workflow 2: Rao Monitors Group Activity
+1. Login as Rao
 2. Navigate to Groups → "Family Credit Cards"
 3. Click "Members" tab
-4. See both Alice (owner) and Bob (member)
+4. See both Rao (owner) and Vijay (member)
 5. Navigate to Links → "Chase Sapphire Preferred"
 6. View analytics/stats
-7. **Expected**: See if Bob has clicked the link
+7. **Expected**: See if Vijay has clicked the link
 
-### Workflow 3: Bob Creates and Shares Link
-1. Login as Bob
+### Workflow 3: Vijay Creates and Shares Link
+1. Login as Vijay
 2. Navigate to Links page
 3. Click "Create Link"
 4. Fill in:
    - Title: "Discover It Cash Back"
-   - URL: "https://discover.com/refer/bob123"
+   - URL: "https://discover.com/refer/vijay123"
    - Category: "Credit Cards"
    - Institution: "Discover"
    - Bonus Value: "$150 cashback"
 5. After creating, click "Share"
 6. Select "Family Credit Cards" group
-7. **Expected**: Alice receives notification about Bob's shared link
+7. **Expected**: Rao receives notification about Vijay's shared link
 
-### Workflow 4: Alice Manages Group
-1. Login as Alice
+### Workflow 4: Rao Manages Group
+1. Login as Rao
 2. Navigate to Groups → "Family Credit Cards"
 3. Click "Edit" button
 4. Update description
 5. Save changes
-6. **Expected**: Bob sees updated description when viewing group
+6. **Expected**: Vijay sees updated description when viewing group
 
 ### Workflow 5: Test Group Invite Code
 1. Logout from all accounts
@@ -187,7 +187,7 @@ The following data has been created:
 ```sql
 -- Users created: 2
 SELECT email, first_name, last_name FROM users 
-WHERE email IN ('alice@example.com', 'bob@example.com');
+WHERE email IN ('kmlnrao@example.com', 'vijay@example.com');
 
 -- Group created: 1
 SELECT name, type, invite_code FROM groups 
@@ -200,7 +200,7 @@ WHERE gm.group_id = (SELECT id FROM groups WHERE name = 'Family Credit Cards');
 
 -- Links created: 3
 SELECT title, institution, bonus_value FROM links
-WHERE owner_id = (SELECT id FROM users WHERE email = 'alice@example.com');
+WHERE owner_id = (SELECT id FROM users WHERE email = 'kmlnrao@example.com');
 
 -- Shares created: 3
 SELECT l.title, s.target_type FROM shares s
@@ -209,7 +209,7 @@ WHERE s.target_type = 'group';
 
 -- Notifications created: 3
 SELECT title, message FROM notifications
-WHERE user_id = (SELECT id FROM users WHERE email = 'bob@example.com');
+WHERE user_id = (SELECT id FROM users WHERE email = 'vijay@example.com');
 ```
 
 ---
@@ -229,8 +229,8 @@ WHERE user_id = (SELECT id FROM users WHERE email = 'bob@example.com');
 
 ### Cannot login?
 - Make sure you're using the exact email and password
-- Alice: `alice@example.com` / `SecurePass123!`
-- Bob: `bob@example.com` / `SecurePass456!`
+- Rao: `kmlnrao@example.com` / `SecurePass123!`
+- Vijay: `vijay@example.com` / `SecurePass456!`
 
 ### Not seeing the group?
 - Click "Groups" in the sidebar
@@ -263,11 +263,11 @@ After exploring the test scenario, you can:
 ## 🎉 Summary
 
 You now have a fully functional multi-user group sharing scenario with:
-- ✅ 2 test users (Alice and Bob)
+- ✅ 2 test users (Rao and Vijay)
 - ✅ 1 private group ("Family Credit Cards")
 - ✅ 3 shared referral links
-- ✅ 3 notifications for Bob
+- ✅ 3 notifications for Vijay
 - ✅ All security features enabled
 - ✅ Ready to explore and test!
 
-**Start exploring**: Go to `/login` and login as Alice or Bob!
+**Start exploring**: Go to `/login` and login as Rao or Vijay!

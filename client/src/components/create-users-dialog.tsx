@@ -29,19 +29,15 @@ export function CreateUsersDialog({ open, onOpenChange, contacts }: CreateUsersD
 
   // Filter for non-registered contacts only
   const nonRegisteredContacts = contacts.filter(
-    (contact) => !contact.metadata?.matchedUserId
+    (contact) => !(contact.metadata as any)?.matchedUserId
   );
 
   const createUsersMutation = useMutation({
     mutationFn: async (data: { users: Array<{ contactId: string; password: string }> }) => {
-      const response = await apiRequest("/api/contacts/create-users", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await apiRequest("POST", "/api/contacts/create-users", data);
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.errors && data.errors.length > 0) {
         setErrors(data.errors);
         toast({

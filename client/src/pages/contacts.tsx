@@ -18,10 +18,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Search, MoreVertical, Trash2, User, Mail, Phone, Users } from "lucide-react";
+import { Upload, Search, MoreVertical, Trash2, User, Mail, Phone, Users, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ImportContactsDialog } from "@/components/import-contacts-dialog";
+import { CreateUsersDialog } from "@/components/create-users-dialog";
 
 interface Contact {
   id: string;
@@ -41,6 +42,7 @@ export default function ContactsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isCreateUsersDialogOpen, setIsCreateUsersDialogOpen] = useState(false);
 
   const { data: contacts = [], isLoading } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
@@ -102,10 +104,21 @@ export default function ContactsPage() {
             Manage your contacts for sharing links and sending invitations
           </p>
         </div>
-        <Button onClick={() => setIsImportDialogOpen(true)} data-testid="button-import-contacts">
-          <Upload className="h-4 w-4 mr-2" />
-          Import CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsCreateUsersDialogOpen(true)} 
+            data-testid="button-create-users"
+            disabled={contacts.filter(c => !c.metadata?.matchedUserId).length === 0}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Create User Accounts
+          </Button>
+          <Button onClick={() => setIsImportDialogOpen(true)} data-testid="button-import-contacts">
+            <Upload className="h-4 w-4 mr-2" />
+            Import CSV
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -248,6 +261,12 @@ export default function ContactsPage() {
       <ImportContactsDialog
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
+      />
+
+      <CreateUsersDialog
+        open={isCreateUsersDialogOpen}
+        onOpenChange={setIsCreateUsersDialogOpen}
+        contacts={contacts}
       />
     </div>
   );

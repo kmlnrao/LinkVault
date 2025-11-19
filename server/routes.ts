@@ -938,6 +938,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create user accounts from contacts
+  app.post("/api/contacts/create-users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { users: usersData } = req.body;
+
+      if (!usersData || !Array.isArray(usersData) || usersData.length === 0) {
+        return res.status(400).json({ message: "Users array is required" });
+      }
+
+      // Validation schema for user creation
+      const createUserSchema = z.object({
+        contactId: z.string(),
+        password: z.string().min(8, "Password must be at least 8 characters"),
+      });
+
+      let created = 0;
+      const errors: Array<{contactId: string, email: string, error: string}> = [];
+      const createdUsers: Array<{id: string, email: string}> = [];
+
+      for (const userData of usersData) {
+        try {
+          // Validate input
+          const validated = createUserSchema.parse(userData);
+          
+          // Get the contact and verify ownership
+          const contacts = await storage.getContacts(userId);
+          const contact = contacts.find(c => c.id === validated.contactId);
+          
+          if (!contact) {
+            errors.push({
+              contactId: validated.contactId,
+              email: "Unknown",
+              error: "Contact not found or access denied",
+            });
+            continue;
+          }
+
+          // Check if contact already has a matched user
+          if (contact.metadata?.matchedUserId) {
+            errors.push({
+              contactId: contact.id,
+              email: contact.contactEmail,
+              error: "User already exists for this contact",
+            });
+            continue;
+          }
+
+          // Check if user with this email already exists
+          const existingUser = await storage.getUserByEmail(contact.contactEmail);
+          if (existingUser) {
+            errors.push({
+              contactId: contact.id,
+              email: contact.contactEmail,
+              error: "User with this email already exists",
+            });
+            continue;
+          }
+
+          // Hash password
+          const passwordHash = await argon2.hash(validated.password);
+
+          // Create user account
+          const newUser = await storage.upsertUser({
+            email: contact.contactEmail,
+            firstName: contact.contactName || null,
+            lastName: null,
+            passwordHash,
+            emailVerified: false, // Admin created, not self-registered
+            phoneVerified: false,
+          });
+
+          // Update contact metadata with matched user ID
+          await storage.updateContact(contact.id, userId, {
+            ...contact,
+            metadata: {
+              ...contact.metadata,
+              matchedUserId: newUser.id,
+            },
+          });
+
+          created++;
+          createdUsers.push({
+            id: newUser.id,
+            email: newUser.email || "",
+          });
+        } catch (error: any) {
+          console.error(`Error creating user:`, error);
+          errors.push({
+            contactId: userData.contactId || "Unknown",
+            email: "Unknown",
+            error: error.message || "Failed to create user",
+          });
+        }
+      }
+
+      const response: any = {
+        message: `Successfully created ${created} user accounts`,
+        created,
+        createdUsers,
+        total: usersData.length,
+      };
+
+      if (errors.length > 0) {
+        response.errors = errors;
+        response.message += ` (${errors.length} failed)`;
+      }
+
+      res.status(201).json(response);
+    } catch (error: any) {
+      console.error("Error creating users from contacts:", error);
+      res.status(500).json({ message: "Failed to create users" });
+    }
+  });
+
   // Delete contact
   app.delete("/api/contacts/:id", isAuthenticated, async (req: any, res) => {
     try {

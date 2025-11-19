@@ -37,6 +37,7 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
   const [shareAfterImport, setShareAfterImport] = useState(false);
   const [shareTargetType, setShareTargetType] = useState<"group" | "contact">("group");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [importErrors, setImportErrors] = useState<Array<{row: number, title: string, error: string}>>([]);
 
   const { data: groups = [] } = useQuery<any[]>({
     queryKey: ["/api/groups"],
@@ -85,6 +86,9 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
 
+    // Clear previous errors when selecting a new file
+    setImportErrors([]);
+
     const validTypes = ["text/csv", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
     if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith(".csv")) {
       toast({
@@ -122,23 +126,32 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
 
   const importMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/links/bulk-import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          links: parsedLinks,
-          shareToGroup: shareAfterImport && shareTargetType === "group" ? selectedGroupId : undefined,
-        }),
+      const response = await apiRequest("POST", "/api/links/bulk-import", {
+        links: parsedLinks,
+        shareToGroup: shareAfterImport && shareTargetType === "group" ? selectedGroupId : undefined,
       });
-      return response;
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/links"] });
+      
+      // Show detailed success/error message
+      const hasErrors = data.errors && data.errors.length > 0;
+      
       toast({
-        title: "Import successful",
-        description: `${parsedLinks.length} links imported successfully`,
+        variant: hasErrors ? "default" : "default",
+        title: hasErrors ? "Import completed with errors" : "Import successful",
+        description: data.message || `${data.count} of ${data.total} links imported successfully`,
       });
-      handleClose();
+      
+      // Store errors to show in UI
+      if (hasErrors) {
+        setImportErrors(data.errors);
+        // Keep dialog open so user can review errors
+      } else {
+        // Only close dialog if no errors
+        handleClose();
+      }
     },
     onError: (error: any) => {
       toast({
@@ -176,6 +189,7 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
     setParsedLinks([]);
     setShareAfterImport(false);
     setSelectedGroupId("");
+    setImportErrors([]);
     onClose();
   };
 
@@ -272,7 +286,7 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
           )}
 
           {/* Preview */}
-          {parsedLinks.length > 0 && (
+          {parsedLinks.length > 0 && importErrors.length === 0 && (
             <div className="space-y-2">
               <Label>Preview (showing first 5)</Label>
               <div className="space-y-2 max-h-48 overflow-auto">
@@ -286,6 +300,27 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Import Errors */}
+          {importErrors.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-destructive">Import Errors ({importErrors.length})</Label>
+              <div className="space-y-2 max-h-48 overflow-auto">
+                {importErrors.map((error, index) => (
+                  <div key={index} className="flex items-start gap-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-sm">
+                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">Row {error.row}: {error.title}</p>
+                      <p className="text-xs text-muted-foreground">{error.error}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                These links were not imported. Please fix the errors and try again.
+              </p>
             </div>
           )}
         </div>

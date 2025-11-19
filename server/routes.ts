@@ -498,24 +498,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Links array is required" });
       }
 
-      // Create all links
-      const createdLinks = [];
-      for (const linkData of links) {
-        try {
-          const validatedData = insertLinkSchema.parse({
-            ...linkData,
-            urlEncrypted: linkData.url, // Map url to urlEncrypted
-            visibility: "private",
+      // Verify group membership BEFORE creating any links
+      if (shareToGroup) {
+        const groupMembers = await storage.getGroupMembers(shareToGroup);
+        const isMember = groupMembers.some(member => member.userId === userId);
+        
+        if (!isMember) {
+          return res.status(403).json({ 
+            message: "Cannot share to group you are not a member of" 
           });
-          const link = await storage.createLink(userId, validatedData);
-          createdLinks.push(link);
-        } catch (error) {
-          console.error("Error creating link:", error);
-          // Continue with next link
         }
       }
 
-      // If shareToGroup is specified, share all created links with the group
+      // Create all links with error tracking
+      const createdLinks = [];
+      const errors = [];
+      
+      for (let i = 0; i < links.length; i++) {
+        const linkData = links[i];
+        try {
+          // Validate and normalize data
+          const validatedData = insertLinkSchema.parse({
+            title: linkData.title,
+            urlEncrypted: linkData.url, // Will be encrypted by storage layer
+            category: linkData.category,
+            institution: linkData.institution || null,
+            bonusValue: linkData.bonusValue || null,
+            expirationDate: linkData.expirationDate || null,
+            notesEncrypted: linkData.notes || null, // Will be encrypted by storage layer
+            visibility: "private",
+            isArchived: false,
+          });
+          
+          const link = await storage.createLink(userId, validatedData);
+          createdLinks.push(link);
+        } catch (error: any) {
+          console.error(`Error creating link ${i + 1}:`, error);
+          errors.push({
+            row: i + 1,
+            title: linkData.title || "Unknown",
+            error: error.message || "Validation failed",
+          });
+        }
+      }
+
+      // Share all created links with the group if specified
       if (shareToGroup && createdLinks.length > 0) {
         for (const link of createdLinks) {
           try {
@@ -526,15 +553,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           } catch (error) {
             console.error("Error sharing link:", error);
-            // Continue with next link
+            // Continue with next link - sharing failure doesn't affect import success
           }
         }
       }
 
-      res.status(201).json({
+      const response: any = {
         message: `Successfully imported ${createdLinks.length} of ${links.length} links`,
         count: createdLinks.length,
-      });
+        total: links.length,
+      };
+
+      if (errors.length > 0) {
+        response.errors = errors;
+        response.message += ` (${errors.length} failed)`;
+      }
+
+      res.status(201).json(response);
     } catch (error: any) {
       console.error("Error bulk importing links:", error);
       res.status(500).json({ message: "Failed to import links" });

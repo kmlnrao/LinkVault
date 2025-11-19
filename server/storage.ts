@@ -41,6 +41,7 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  searchUsers(query: string): Promise<User[]>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
@@ -89,6 +90,7 @@ export interface IStorage {
 
   // Share operations
   createShare(sharedById: string, share: InsertShare): Promise<Share>;
+  deleteShare(shareId: string): Promise<boolean>;
   getSharesByLink(linkId: string): Promise<Share[]>;
   getSharesByUser(userId: string): Promise<Share[]>;
 
@@ -139,6 +141,27 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    if (!query) {
+      // Return all users if no query
+      return await db.select().from(users).limit(50);
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const results = await db
+      .select()
+      .from(users)
+      .where(
+        or(
+          sql`LOWER(${users.email}) LIKE ${`%${lowerQuery}%`}`,
+          sql`LOWER(${users.firstName}) LIKE ${`%${lowerQuery}%`}`,
+          sql`LOWER(${users.lastName}) LIKE ${`%${lowerQuery}%`}`
+        )
+      )
+      .limit(50);
+    return results;
   }
 
   // ============================================================================
@@ -533,6 +556,11 @@ export class DatabaseStorage implements IStorage {
       .from(shares)
       .where(eq(shares.sharedById, userId))
       .orderBy(desc(shares.createdAt));
+  }
+
+  async deleteShare(shareId: string): Promise<boolean> {
+    const result = await db.delete(shares).where(eq(shares.id, shareId));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 
   async getSharesByGroup(groupId: string): Promise<Share[]> {

@@ -514,6 +514,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Share link with groups or users
+  app.post("/api/links/:id/share", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const linkId = req.params.id;
+      const { targetType, targetIds } = req.body;
+
+      // Verify ownership
+      const link = await storage.getLinkById(linkId);
+      if (!link) {
+        return res.status(404).json({ message: "Link not found" });
+      }
+      if (link.ownerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      if (!targetType || !targetIds || !Array.isArray(targetIds)) {
+        return res.status(400).json({ message: "targetType and targetIds (array) are required" });
+      }
+
+      if (targetType !== "group" && targetType !== "user") {
+        return res.status(400).json({ message: "targetType must be 'group' or 'user'" });
+      }
+
+      // Create shares
+      const shares = await Promise.all(
+        targetIds.map((targetId: string) =>
+          storage.createShare(userId, {
+            linkId,
+            targetType: targetType === "user" ? "contact" : "group",
+            targetId,
+          })
+        )
+      );
+
+      res.json(shares);
+    } catch (error) {
+      console.error("Error sharing link:", error);
+      res.status(500).json({ message: "Failed to share link" });
+    }
+  });
+
+  // Get who a link is shared with
+  app.get("/api/links/:id/shares", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const linkId = req.params.id;
+
+      // Verify ownership
+      const link = await storage.getLinkById(linkId);
+      if (!link) {
+        return res.status(404).json({ message: "Link not found" });
+      }
+      if (link.ownerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const shares = await storage.getSharesByLink(linkId);
+
+      // Enrich shares with details
+      const enrichedShares = await Promise.all(
+        shares.map(async (share: any) => {
+          if (share.targetType === "group") {
+            const group = await storage.getGroupById(share.targetId);
+            return {
+              ...share,
+              target: group,
+            };
+          } else if (share.targetType === "contact") {
+            const user = await storage.getUser(share.targetId);
+            return {
+              ...share,
+              target: user,
+            };
+          }
+          return share;
+        })
+      );
+
+      res.json(enrichedShares);
+    } catch (error) {
+      console.error("Error fetching link shares:", error);
+      res.status(500).json({ message: "Failed to fetch link shares" });
+    }
+  });
+
+  // Unshare link from group or user
+  app.delete("/api/links/:linkId/shares/:shareId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { linkId, shareId } = req.params;
+
+      // Verify ownership
+      const link = await storage.getLinkById(linkId);
+      if (!link) {
+        return res.status(404).json({ message: "Link not found" });
+      }
+      if (link.ownerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const success = await storage.deleteShare(shareId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Share not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unsharing link:", error);
+      res.status(500).json({ message: "Failed to unshare link" });
+    }
+  });
+
+  // ============================================================================
+  // USER ROUTES
+  // ============================================================================
+
+  // Search/list users (for sharing links)
+  app.get("/api/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const query = req.query.q || "";
+      const users = await storage.searchUsers(query);
+      
+      // Don't return sensitive fields
+      const safeUsers = users.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+      }));
+
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      res.status(500).json({ message: "Failed to search users" });
+    }
+  });
+
   // ============================================================================
   // GROUP ROUTES
   // ============================================================================

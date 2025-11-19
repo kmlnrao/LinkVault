@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -74,6 +75,11 @@ export default function LinksPage() {
 
   const { data: links = [], isLoading } = useQuery<Link[]>({
     queryKey: ["/api/links"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: sharedLinks = [], isLoading: isLoadingShared } = useQuery<Link[]>({
+    queryKey: ["/api/links/shared/with-me"],
     enabled: isAuthenticated,
   });
 
@@ -207,9 +213,9 @@ export default function LinksPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-semibold tracking-tight mb-2">My Links</h1>
+            <h1 className="text-4xl font-semibold tracking-tight mb-2">Links</h1>
             <p className="text-muted-foreground">
-              Manage your referral links and track their performance.
+              Manage your referral links and view links shared with you.
             </p>
           </div>
           <Button
@@ -224,6 +230,18 @@ export default function LinksPage() {
           </Button>
         </div>
 
+        {/* Tabs */}
+        <Tabs defaultValue="my-links" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="my-links" data-testid="tab-my-links">
+              My Links ({links.length})
+            </TabsTrigger>
+            <TabsTrigger value="shared-with-me" data-testid="tab-shared-with-me">
+              Shared With Me ({sharedLinks.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="my-links" className="space-y-6">
         {/* Filters */}
         <Card className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -418,6 +436,88 @@ export default function LinksPage() {
             ))}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="shared-with-me" className="space-y-6">
+            {isLoadingShared ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-48" />
+                ))}
+              </div>
+            ) : sharedLinks.length === 0 ? (
+              <Card className="p-12">
+                <div className="text-center">
+                  <Share2 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No shared links</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Links shared with you by other users will appear here.
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sharedLinks.map((link: any) => (
+                  <Card
+                    key={link.id}
+                    className="p-6 hover-elevate space-y-4"
+                    data-testid={`shared-link-card-${link.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 space-y-1">
+                        <h3 className="font-semibold text-lg line-clamp-2">{link.title}</h3>
+                        {link.institution && (
+                          <p className="text-sm text-muted-foreground">{link.institution}</p>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(link)} data-testid={`button-copy-shared-${link.id}`}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {link.bonusValue && (
+                        <Badge className="bg-primary/10 text-primary border-primary/20">
+                          <DollarSign className="h-3 w-3 mr-1" />
+                          {link.bonusValue}
+                        </Badge>
+                      )}
+                      <Badge variant="secondary">{link.category}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Shared
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          <span>{link.clickCount} clicks</span>
+                        </div>
+                      </div>
+                      {link.expiresAt && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            Expires{" "}
+                            {formatDistanceToNow(new Date(link.expiresAt), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                        </div>
+                      )}
+                      {link.sharedAt && (
+                        <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                          Shared {formatDistanceToNow(new Date(link.sharedAt), { addSuffix: true })}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Dialogs */}

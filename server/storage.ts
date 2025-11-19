@@ -94,6 +94,7 @@ export interface IStorage {
   deleteShare(shareId: string): Promise<boolean>;
   getSharesByLink(linkId: string): Promise<Share[]>;
   getSharesByUser(userId: string): Promise<Share[]>;
+  getSharesWithUser(userId: string): Promise<Share[]>;
 
   // Click event operations
   recordClick(event: InsertClickEvent): Promise<ClickEvent>;
@@ -562,6 +563,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(shares)
       .where(eq(shares.sharedById, userId))
+      .orderBy(desc(shares.createdAt));
+  }
+
+  async getSharesWithUser(userId: string): Promise<Share[]> {
+    return await db
+      .select()
+      .from(shares)
+      .where(and(eq(shares.targetType, "contact"), eq(shares.targetId, userId)))
       .orderBy(desc(shares.createdAt));
   }
 

@@ -408,6 +408,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get links shared with current user
+  app.get("/api/links/shared/with-me", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get all shares where this user is the target
+      const shares = await storage.getSharesWithUser(userId);
+      
+      // Get link details for each share
+      const links = await Promise.all(
+        shares.map(async (share: any) => {
+          const link = await storage.getLinkById(share.linkId!);
+          if (!link) return null;
+          
+          // Add metadata about who shared it
+          return {
+            ...link,
+            sharedById: share.sharedById,
+            sharedAt: share.createdAt,
+          };
+        })
+      );
+
+      // Filter out any null links
+      const validLinks = links.filter((link: any) => link !== null);
+
+      res.json(validLinks);
+    } catch (error) {
+      console.error("Error fetching shared links:", error);
+      res.status(500).json({ message: "Failed to fetch shared links" });
+    }
+  });
+
   // Get single link by ID
   app.get("/api/links/:id", isAuthenticated, async (req: any, res) => {
     try {

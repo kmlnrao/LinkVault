@@ -14,6 +14,7 @@ import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
 import Dashboard from "@/pages/dashboard";
 import LinksPage from "@/pages/links";
+import ContactsPage from "@/pages/contacts";
 import GroupsPage from "@/pages/groups";
 import GroupDetailPage from "@/pages/group-detail";
 import AnalyticsPage from "@/pages/analytics";
@@ -36,6 +37,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/links" component={LinksPage} />
+          <Route path="/contacts" component={ContactsPage} />
           <Route path="/groups" component={GroupsPage} />
           <Route path="/groups/:id" component={GroupDetailPage} />
           <Route path="/analytics" component={AnalyticsPage} />

@@ -3,9 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, createLoginAudit } from "./auth";
 import passport from "passport";
-import { insertLinkSchema, insertGroupSchema } from "@shared/schema";
+import { insertLinkSchema, insertGroupSchema, insertContactSchema } from "@shared/schema";
 import { hashIP, hashUserAgent } from "./lib/encryption";
 import argon2 from "argon2";
+import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup new auth with OAuth providers
@@ -814,6 +815,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching users:", error);
       res.status(500).json({ message: "Failed to search users" });
+    }
+  });
+
+  // ============================================================================
+  // CONTACT ROUTES
+  // ============================================================================
+
+  // Get all contacts for user
+  app.get("/api/contacts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const source = req.query.source as string | undefined;
+      const contacts = await storage.getContacts(userId, source);
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ message: "Failed to fetch contacts" });
+    }
+  });
+
+  // Create a single contact
+  app.post("/api/contacts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const validatedData = insertContactSchema.parse(req.body);
+      const contact = await storage.createContact(userId, validatedData);
+      res.status(201).json(contact);
+    } catch (error: any) {
+      console.error("Error creating contact:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Invalid contact data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create contact" });
+    }
+  });
+
+  // Bulk import contacts from CSV
+  app.post("/api/contacts/bulk-import", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { contacts: contactsData } = req.body;
+
+      if (!contactsData || !Array.isArray(contactsData) || contactsData.length === 0) {
+        return res.status(400).json({ message: "Contacts array is required" });
+      }
+
+      let created = 0;
+      let updated = 0;
+      const errors: Array<{row: number, email: string, error: string}> = [];
+
+      for (let i = 0; i < contactsData.length; i++) {
+        const contactData = contactsData[i];
+        try {
+          // Validate email format
+          const emailSchema = z.string().email();
+          emailSchema.parse(contactData.email);
+
+          // Check if contact with this email already exists for this user
+          const existingContacts = await storage.getContacts(userId);
+          const existing = existingContacts.find(
+            (c) => c.contactEmail.toLowerCase() === contactData.email.toLowerCase()
+          );
+
+          // Check if email matches an existing LinkVault user
+          const matchedUsers = await storage.searchUsers(contactData.email);
+          const matchedUser = matchedUsers.find(
+            (u) => u.email?.toLowerCase() === contactData.email.toLowerCase()
+          );
+
+          const metadata: any = {};
+          if (contactData.notes) {
+            metadata.notes = contactData.notes;
+          }
+          if (matchedUser) {
+            metadata.matchedUserId = matchedUser.id;
+          }
+
+          const insertData = {
+            contactEmail: contactData.email,
+            contactName: contactData.name || null,
+            contactPhone: contactData.phone || null,
+            source: "csv",
+            metadata: Object.keys(metadata).length > 0 ? metadata : null,
+          };
+
+          if (existing) {
+            // Update existing contact
+            await storage.updateContact(existing.id, userId, insertData);
+            updated++;
+          } else {
+            // Create new contact
+            await storage.createContact(userId, insertData);
+            created++;
+          }
+        } catch (error: any) {
+          console.error(`Error processing contact ${i + 1}:`, error);
+          errors.push({
+            row: i + 1,
+            email: contactData.email || "Unknown",
+            error: error.message || "Validation failed",
+          });
+        }
+      }
+
+      const response: any = {
+        message: `Successfully imported ${created + updated} contacts`,
+        created,
+        updated,
+        total: contactsData.length,
+      };
+
+      if (errors.length > 0) {
+        response.errors = errors;
+        response.message += ` (${errors.length} failed)`;
+      }
+
+      res.status(201).json(response);
+    } catch (error: any) {
+      console.error("Error bulk importing contacts:", error);
+      res.status(500).json({ message: "Failed to import contacts" });
+    }
+  });
+
+  // Delete contact
+  app.delete("/api/contacts/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const success = await storage.deleteContact(req.params.id, userId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Contact not found or access denied" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      res.status(500).json({ message: "Failed to delete contact" });
     }
   });
 

@@ -20,6 +20,7 @@ import {
   Home,
   Link2,
   Users,
+  UserPlus,
   BarChart3,
   Settings,
   LogOut,
@@ -40,6 +41,11 @@ const menuItems = [
     title: "My Links",
     url: "/links",
     icon: Link2,
+  },
+  {
+    title: "Contacts",
+    url: "/contacts",
+    icon: UserPlus,
   },
   {
     title: "Groups",

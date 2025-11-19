@@ -16,6 +16,7 @@ export default function Signup() {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: "",
+    phone: "",
     password: "",
     firstName: "",
     lastName: "",
@@ -24,6 +25,17 @@ export default function Signup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate that at least email OR phone is provided
+    if (!formData.email && !formData.phone) {
+      toast({
+        variant: "destructive",
+        title: "Validation error",
+        description: "Please provide at least an email or phone number",
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -111,7 +123,7 @@ export default function Signup() {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-card px-2 text-muted-foreground">
-                    Or sign up with email
+                    Or sign up with email/phone
                   </span>
                 </div>
               </div>
@@ -147,16 +159,29 @@ export default function Signup() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email (optional if providing phone)</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
                 data-testid="input-email"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone number (optional if providing email)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+1234567890"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                data-testid="input-phone"
+              />
+              <p className="text-xs text-muted-foreground">
+                At least one of email or phone is required
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

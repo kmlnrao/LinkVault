@@ -13,8 +13,8 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const [email, setEmail] = useState("");
+  const { toast} = useToast();
+  const [username, setUsername] = useState(""); // Can be email or phone
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,7 +24,7 @@ export default function Login() {
 
     try {
       const response = await apiRequest("POST", "/api/auth/login", {
-        email,
+        username, // Backend expects 'username' field
         password,
       });
 
@@ -40,7 +40,7 @@ export default function Login() {
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: data.message || "Invalid email or password",
+          description: data.message || "Invalid email/phone or password",
         });
       }
     } catch (error) {
@@ -110,25 +110,25 @@ export default function Login() {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-card px-2 text-muted-foreground">
-                    Or continue with email
+                    Or continue with email/phone
                   </span>
                 </div>
               </div>
             </>
           )}
 
-          {/* Email/Password Form */}
+          {/* Email/Phone/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Email or phone number</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="you@example.com or +1234567890"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
-                data-testid="input-email"
+                data-testid="input-username"
               />
             </div>
             <div className="space-y-2">

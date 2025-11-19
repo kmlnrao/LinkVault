@@ -488,6 +488,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk import links from CSV
+  app.post("/api/links/bulk-import", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { links, shareToGroup } = req.body;
+
+      if (!links || !Array.isArray(links) || links.length === 0) {
+        return res.status(400).json({ message: "Links array is required" });
+      }
+
+      // Create all links
+      const createdLinks = [];
+      for (const linkData of links) {
+        try {
+          const validatedData = insertLinkSchema.parse({
+            ...linkData,
+            urlEncrypted: linkData.url, // Map url to urlEncrypted
+            visibility: "private",
+          });
+          const link = await storage.createLink(userId, validatedData);
+          createdLinks.push(link);
+        } catch (error) {
+          console.error("Error creating link:", error);
+          // Continue with next link
+        }
+      }
+
+      // If shareToGroup is specified, share all created links with the group
+      if (shareToGroup && createdLinks.length > 0) {
+        for (const link of createdLinks) {
+          try {
+            await storage.createShare(userId, {
+              linkId: link.id,
+              targetType: "group",
+              targetId: shareToGroup,
+            });
+          } catch (error) {
+            console.error("Error sharing link:", error);
+            // Continue with next link
+          }
+        }
+      }
+
+      res.status(201).json({
+        message: `Successfully imported ${createdLinks.length} of ${links.length} links`,
+        count: createdLinks.length,
+      });
+    } catch (error: any) {
+      console.error("Error bulk importing links:", error);
+      res.status(500).json({ message: "Failed to import links" });
+    }
+  });
+
   // Update link
   app.patch("/api/links/:id", isAuthenticated, async (req: any, res) => {
     try {

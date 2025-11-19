@@ -298,6 +298,14 @@ export function ViewLinkDialog({ link, isOpen, onClose }: ViewLinkDialogProps) {
             Close
           </Button>
           <Button
+            variant="outline"
+            onClick={() => window.open(link.urlEncrypted, '_blank')}
+            data-testid="button-open-link"
+          >
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Open Link
+          </Button>
+          <Button
             onClick={handleCopy}
             data-testid="button-copy-link"
           >

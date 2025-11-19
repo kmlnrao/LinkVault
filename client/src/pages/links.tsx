@@ -40,6 +40,7 @@ import {
   ArchiveRestore,
   Copy,
   Eye,
+  Upload,
 } from "lucide-react";
 import type { Link } from "@shared/schema";
 import { LINK_CATEGORIES } from "@shared/schema";
@@ -47,6 +48,7 @@ import { formatDistanceToNow } from "date-fns";
 import { LinkDialog } from "@/components/link-dialog";
 import { ShareLinkDialog } from "@/components/share-link-dialog";
 import { ViewLinkDialog } from "@/components/view-link-dialog";
+import { ImportLinksDialog } from "@/components/import-links-dialog";
 
 export default function LinksPage() {
   const { toast } = useToast();
@@ -58,6 +60,7 @@ export default function LinksPage() {
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
 
   useEffect(() => {
@@ -218,16 +221,26 @@ export default function LinksPage() {
               Manage your referral links and view links shared with you.
             </p>
           </div>
-          <Button
-            onClick={() => {
-              setSelectedLink(null);
-              setIsLinkDialogOpen(true);
-            }}
-            data-testid="button-create-link"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Link
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsImportDialogOpen(true)}
+              data-testid="button-import-links"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
+            </Button>
+            <Button
+              onClick={() => {
+                setSelectedLink(null);
+                setIsLinkDialogOpen(true);
+              }}
+              data-testid="button-create-link"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Link
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -347,6 +360,10 @@ export default function LinksPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => window.open(link.urlEncrypted, '_blank')} data-testid={`menu-open-${link.id}`}>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Open Link
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleView(link)} data-testid={`menu-view-${link.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
@@ -477,6 +494,10 @@ export default function LinksPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => window.open(link.urlEncrypted, '_blank')} data-testid={`menu-open-shared-${link.id}`}>
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Open Link
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleView(link)} data-testid={`menu-view-shared-${link.id}`}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
@@ -550,6 +571,10 @@ export default function LinksPage() {
         link={selectedLink}
         isOpen={isViewDialogOpen}
         onClose={() => setIsViewDialogOpen(false)}
+      />
+      <ImportLinksDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
       />
     </div>
   );

@@ -437,21 +437,27 @@ export function setupAuth(app: Express, config: AuthConfig) {
   }
 
   // ============================================================================
-  // LOCAL STRATEGY (Email/Password)
+  // LOCAL STRATEGY (Email/Phone/Password)
   // ============================================================================
 
   passport.use(
     new LocalStrategy(
       {
-        usernameField: "email",
+        usernameField: "username", // Can be email or phone
         passwordField: "password",
       },
-      async (email, password, done) => {
+      async (username, password, done) => {
         try {
-          const user = await storage.getUserByEmail(email);
+          // Determine if username is email or phone (simple check: contains @)
+          const isEmail = username.includes('@');
+          
+          // Look up user by email or phone
+          const user = isEmail 
+            ? await storage.getUserByEmail(username)
+            : await storage.getUserByPhone(username);
 
           if (!user) {
-            return done(null, false, { message: "Invalid email or password" });
+            return done(null, false, { message: "Invalid email/phone or password" });
           }
 
           // Check if account is locked
@@ -489,7 +495,7 @@ export function setupAuth(app: Express, config: AuthConfig) {
 
             await storage.updateUser(user.id, updates);
 
-            return done(null, false, { message: "Invalid email or password" });
+            return done(null, false, { message: "Invalid email/phone or password" });
           }
 
           // Successful login - reset failed attempts
@@ -502,6 +508,7 @@ export function setupAuth(app: Express, config: AuthConfig) {
           done(null, {
             id: user.id,
             email: user.email,
+            phone: user.phone,
             firstName: user.firstName,
             lastName: user.lastName,
             profileImageUrl: user.profileImageUrl,

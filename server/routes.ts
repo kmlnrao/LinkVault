@@ -142,18 +142,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Local auth - Signup
   app.post("/api/auth/signup", async (req: any, res) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { email, phone, password, firstName, lastName } = req.body;
 
-      if (!email || !password) {
+      // Require at least email OR phone
+      if ((!email && !phone) || !password) {
         return res
           .status(400)
-          .json({ message: "Email and password are required" });
+          .json({ message: "Email or phone number and password are required" });
       }
 
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
+      // Check if user already exists by email or phone
+      if (email) {
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) {
+          return res.status(400).json({ message: "User with this email already exists" });
+        }
+      }
+      
+      if (phone) {
+        const existingUser = await storage.getUserByPhone(phone);
+        if (existingUser) {
+          return res.status(400).json({ message: "User with this phone number already exists" });
+        }
       }
 
       // Hash password
@@ -161,11 +171,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create user
       const user = await storage.upsertUser({
-        email,
+        email: email || null,
+        phone: phone || null,
         firstName: firstName || null,
         lastName: lastName || null,
         passwordHash,
-        emailVerified: false,
+        emailVerified: email ? false : undefined,
+        phoneVerified: phone ? false : undefined,
       });
 
       // Log in the user
@@ -173,6 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           id: user.id,
           email: user.email,
+          phone: user.phone,
           firstName: user.firstName,
           lastName: user.lastName,
           profileImageUrl: user.profileImageUrl,
@@ -184,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           await createLoginAudit(storage, {
             userId: user.id,
-            email: user.email || "",
+            email: user.email || user.phone || "",
             action: "signup",
             provider: "local",
             ipAddress: req.ip || "",
@@ -210,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!user) {
         await createLoginAudit(storage, {
-          email: req.body.email || "",
+          email: req.body.username || "",
           action: "login_failed",
           provider: "local",
           ipAddress: req.ip || "",
@@ -228,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         await createLoginAudit(storage, {
           userId: user.id,
-          email: user.email || "",
+          email: user.email || user.phone || "",
           action: "login",
           provider: "local",
           ipAddress: req.ip || "",

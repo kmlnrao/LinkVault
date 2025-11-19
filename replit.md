@@ -25,14 +25,15 @@ Preferred communication style: Simple, everyday language.
 **Key Design Patterns**:
 - Component composition with Radix UI primitives for accessibility
 - Custom hooks for reusable logic (useAuth, useToast, useIsMobile)
-- Dialog-based workflows for creating/editing links and groups
+- Dialog-based workflows for creating/editing links, groups, and importing contacts/links via CSV
 - Responsive sidebar layout with mobile sheet overlay
+- CSV bulk import with sample file download, validation, and auto-matching for both links and contacts
 
 ### Backend Architecture
 
 **Runtime**: Node.js with Express.js framework, written in TypeScript.
 
-**API Design**: RESTful API with endpoints organized by resource (auth, links, groups, shares, analytics). Routes are registered centrally in `server/routes.ts`.
+**API Design**: RESTful API with endpoints organized by resource (auth, links, contacts, groups, shares, analytics). Routes are registered centrally in `server/routes.ts`. Includes bulk import endpoints for CSV-based contact and link imports with deduplication and auto-matching.
 
 **Authentication**: OpenID Connect (OIDC) integration via Replit Auth using Passport.js strategy. Session management is handled through express-session with PostgreSQL session store (connect-pg-simple).
 
@@ -58,6 +59,7 @@ Preferred communication style: Simple, everyday language.
 
 **Schema Design**:
 - `users`: User profiles from OIDC authentication
+- `contacts`: User-imported contacts for sharing and invitations (email, name, phone, source, metadata with auto-matched user IDs)
 - `links`: Encrypted referral links with metadata (category, institution, bonus value, expiration)
 - `groups`: Private groups for sharing links
 - `group_memberships`: Many-to-many relationship between users and groups with role support

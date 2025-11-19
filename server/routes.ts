@@ -451,9 +451,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Link not found" });
       }
 
-      // Check if user owns the link
+      // Check if user owns the link OR if the link is shared with them
       if (link.ownerId !== userId) {
-        return res.status(403).json({ message: "Access denied" });
+        // Check if link is shared with this user
+        const shares = await storage.getSharesWithUser(userId);
+        const isSharedWithUser = shares.some(share => share.linkId === req.params.id);
+        
+        if (!isSharedWithUser) {
+          return res.status(403).json({ message: "Access denied" });
+        }
       }
 
       res.json(link);

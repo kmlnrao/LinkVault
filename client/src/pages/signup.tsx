@@ -39,7 +39,12 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const response = await apiRequest("POST", "/api/auth/signup", formData);
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+        credentials: "include",
+      });
 
       if (response.ok) {
         toast({

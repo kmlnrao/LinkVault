@@ -76,8 +76,6 @@ Preferred communication style: Simple, everyday language.
 
 **Database Service**: Neon PostgreSQL serverless database (connection via `DATABASE_URL` environment variable).
 
-**Payment Processing**: Stripe integration indicated by `@stripe/stripe-js` and `@stripe/react-stripe-js` dependencies, though implementation details not visible in provided files.
-
 **UI Component Libraries**:
 - Radix UI primitives for accessible, unstyled components
 - Lucide React for icons

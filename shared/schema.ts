@@ -32,6 +32,7 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
+  phone: varchar("phone", { length: 20 }).unique(), // Phone number for login
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -45,6 +46,7 @@ export const users = pgTable("users", {
   accountLockedUntil: timestamp("account_locked_until"),
   isAdmin: boolean("is_admin").default(false).notNull(),
   emailVerified: boolean("email_verified").default(false).notNull(),
+  phoneVerified: boolean("phone_verified").default(false).notNull(), // Phone verification status
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

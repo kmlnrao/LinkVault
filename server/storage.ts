@@ -41,6 +41,7 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByPhone(phone: string): Promise<User | undefined>;
   searchUsers(query: string): Promise<User[]>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
@@ -134,6 +135,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return user;
+  }
+
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
     const [user] = await db
       .update(users)
@@ -156,6 +162,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         or(
           sql`LOWER(${users.email}) LIKE ${`%${lowerQuery}%`}`,
+          sql`${users.phone} LIKE ${`%${query}%`}`,
           sql`LOWER(${users.firstName}) LIKE ${`%${lowerQuery}%`}`,
           sql`LOWER(${users.lastName}) LIKE ${`%${lowerQuery}%`}`
         )

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,6 +35,7 @@ import { InviteMembersDialog } from "@/components/invite-members-dialog";
 type GroupWithCounts = Group & { memberCount: number; linkCount: number };
 
 export default function GroupsPage() {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -221,7 +223,8 @@ export default function GroupsPage() {
             {filteredGroups.map((group) => (
               <Card
                 key={group.id}
-                className="hover-elevate"
+                className="hover-elevate cursor-pointer"
+                onClick={() => navigate(`/groups/${group.id}`)}
                 data-testid={`group-card-${group.id}`}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -238,27 +241,32 @@ export default function GroupsPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" data-testid={`button-group-menu-${group.id}`}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid={`button-group-menu-${group.id}`}
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(group)}>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(group); }}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleInvite(group)}>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleInvite(group); }}>
                         <UserPlus className="mr-2 h-4 w-4" />
                         Invite Members
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleCopyInviteCode(group.inviteCode)}
+                        onClick={(e) => { e.stopPropagation(); handleCopyInviteCode(group.inviteCode); }}
                       >
                         <Copy className="mr-2 h-4 w-4" />
                         Copy Invite Code
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDelete(group.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(group.id); }}
                         className="text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -287,7 +295,7 @@ export default function GroupsPage() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleInvite(group)}
+                    onClick={(e) => { e.stopPropagation(); handleInvite(group); }}
                     data-testid={`button-invite-${group.id}`}
                   >
                     <UserPlus className="mr-2 h-4 w-4" />

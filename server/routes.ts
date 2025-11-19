@@ -634,6 +634,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get group members
+  app.get("/api/groups/:id/members", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const groupId = req.params.id;
+
+      // Verify group exists and user has access
+      const group = await storage.getGroupById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+
+      // Check if user is owner or member
+      const members = await storage.getGroupMembers(groupId);
+      const hasAccess = group.ownerId === userId || members.some(m => m.userId === userId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied. You must be a member of this group." });
+      }
+
+      // Get full member details with user info
+      const membersWithUsers = await Promise.all(
+        members.map(async (member) => {
+          const user = await storage.getUser(member.userId);
+          return {
+            ...member,
+            user,
+          };
+        })
+      );
+
+      res.json(membersWithUsers);
+    } catch (error) {
+      console.error("Error fetching group members:", error);
+      res.status(500).json({ message: "Failed to fetch group members" });
+    }
+  });
+
+  // Get links shared with a group
+  app.get("/api/groups/:id/links", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const groupId = req.params.id;
+
+      // Verify group exists and user has access
+      const group = await storage.getGroupById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+
+      // Check if user is owner or member
+      const members = await storage.getGroupMembers(groupId);
+      const hasAccess = group.ownerId === userId || members.some(m => m.userId === userId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied. You must be a member of this group." });
+      }
+
+      // Get all shares for this group
+      const shares = await storage.getSharesByGroup(groupId);
+      
+      // Get link details for each share
+      const links = await Promise.all(
+        shares
+          .filter((share: any) => share.linkId)
+          .map(async (share: any) => {
+            const link = await storage.getLinkById(share.linkId!);
+            return link;
+          })
+      );
+
+      // Filter out any undefined links
+      const validLinks = links.filter((link: any) => link !== undefined);
+
+      res.json(validLinks);
+    } catch (error) {
+      console.error("Error fetching group links:", error);
+      res.status(500).json({ message: "Failed to fetch group links" });
+    }
+  });
+
+  // Remove member from group
+  app.delete("/api/groups/:id/members/:userId", isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.id;
+      const groupId = req.params.id;
+      const targetUserId = req.params.userId;
+
+      // Verify group exists
+      const group = await storage.getGroupById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+
+      // Only group owner can remove members
+      if (group.ownerId !== currentUserId) {
+        return res.status(403).json({ message: "Only group owner can remove members" });
+      }
+
+      // Can't remove the owner
+      if (targetUserId === group.ownerId) {
+        return res.status(400).json({ message: "Cannot remove group owner" });
+      }
+
+      const success = await storage.removeGroupMember(groupId, targetUserId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Member not found in group" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing group member:", error);
+      res.status(500).json({ message: "Failed to remove group member" });
+    }
+  });
+
   // Invite members to group
   app.post("/api/groups/:id/invite", isAuthenticated, async (req: any, res) => {
     try {

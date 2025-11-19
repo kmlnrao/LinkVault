@@ -15,6 +15,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import Dashboard from "@/pages/dashboard";
 import LinksPage from "@/pages/links";
 import GroupsPage from "@/pages/groups";
+import GroupDetailPage from "@/pages/group-detail";
 import AnalyticsPage from "@/pages/analytics";
 import SettingsPage from "@/pages/settings";
 
@@ -36,6 +37,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/links" component={LinksPage} />
           <Route path="/groups" component={GroupsPage} />
+          <Route path="/groups/:id" component={GroupDetailPage} />
           <Route path="/analytics" component={AnalyticsPage} />
           <Route path="/settings" component={SettingsPage} />
         </>

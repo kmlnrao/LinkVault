@@ -628,6 +628,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get click analytics for a link
+  app.get("/api/links/:id/clicks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const linkId = req.params.id;
+
+      // Verify ownership
+      const link = await storage.getLinkById(linkId);
+      if (!link) {
+        return res.status(404).json({ message: "Link not found" });
+      }
+      if (link.ownerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const clicks = await storage.getClicksByLink(linkId);
+      res.json(clicks);
+    } catch (error) {
+      console.error("Error fetching link clicks:", error);
+      res.status(500).json({ message: "Failed to fetch link clicks" });
+    }
+  });
+
   // ============================================================================
   // USER ROUTES
   // ============================================================================

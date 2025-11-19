@@ -37,12 +37,15 @@ import {
   ExternalLink,
   Archive,
   ArchiveRestore,
+  Copy,
+  Eye,
 } from "lucide-react";
 import type { Link } from "@shared/schema";
 import { LINK_CATEGORIES } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { LinkDialog } from "@/components/link-dialog";
 import { ShareLinkDialog } from "@/components/share-link-dialog";
+import { ViewLinkDialog } from "@/components/view-link-dialog";
 
 export default function LinksPage() {
   const { toast } = useToast();
@@ -53,6 +56,7 @@ export default function LinksPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
 
   useEffect(() => {
@@ -166,6 +170,27 @@ export default function LinksPage() {
 
   const handleArchive = (id: string, archive: boolean) => {
     archiveMutation.mutate({ id, archive });
+  };
+
+  const handleCopyLink = async (link: Link) => {
+    try {
+      await navigator.clipboard.writeText(link.urlEncrypted);
+      toast({
+        title: "Copied!",
+        description: "Referral link copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to copy link",
+      });
+    }
+  };
+
+  const handleView = (link: Link) => {
+    setSelectedLink(link);
+    setIsViewDialogOpen(true);
   };
 
   if (authLoading) {
@@ -304,6 +329,14 @@ export default function LinksPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleView(link)} data-testid={`menu-view-${link.id}`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCopyLink(link)} data-testid={`menu-copy-${link.id}`}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy Link
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleEdit(link)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
@@ -398,6 +431,11 @@ export default function LinksPage() {
         linkTitle={selectedLink?.title || ""}
         isOpen={isShareDialogOpen && !!selectedLink}
         onClose={() => setIsShareDialogOpen(false)}
+      />
+      <ViewLinkDialog
+        link={selectedLink}
+        isOpen={isViewDialogOpen}
+        onClose={() => setIsViewDialogOpen(false)}
       />
     </div>
   );

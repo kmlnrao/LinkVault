@@ -23,20 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ImportContactsDialog } from "@/components/import-contacts-dialog";
 import { CreateUsersDialog } from "@/components/create-users-dialog";
-
-interface Contact {
-  id: string;
-  contactEmail: string;
-  contactName?: string;
-  contactPhone?: string;
-  source: string;
-  metadata?: {
-    notes?: string;
-    tags?: string[];
-    matchedUserId?: string;
-  };
-  createdAt: string;
-}
+import type { Contact } from "@shared/schema";
 
 export default function ContactsPage() {
   const { toast } = useToast();
@@ -109,7 +96,7 @@ export default function ContactsPage() {
             variant="outline" 
             onClick={() => setIsCreateUsersDialogOpen(true)} 
             data-testid="button-create-users"
-            disabled={contacts.filter(c => !c.metadata?.matchedUserId).length === 0}
+            disabled={contacts.filter(c => !(c.metadata as any)?.matchedUserId).length === 0}
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Create User Accounts
@@ -216,7 +203,7 @@ export default function ContactsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {contact.metadata?.matchedUserId ? (
+                        {(contact.metadata as any)?.matchedUserId ? (
                           <Badge variant="default">
                             LinkVault User
                           </Badge>

@@ -110,7 +110,7 @@ export function ShareLinkDialog({ linkId, linkTitle, isOpen, onClose }: ShareLin
       shareMutation.mutate({ targetType: "group", targetIds: selectedGroups });
     }
     if (selectedUsers.length > 0) {
-      shareMutation.mutate({ targetType: "user", targetIds: selectedUsers });
+      shareMutation.mutate({ targetType: "contact", targetIds: selectedUsers });
     }
   };
 

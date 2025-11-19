@@ -394,9 +394,10 @@ export default function LinksPage() {
         link={selectedLink}
       />
       <ShareLinkDialog
-        open={isShareDialogOpen}
-        onOpenChange={setIsShareDialogOpen}
-        link={selectedLink}
+        linkId={selectedLink?.id || ""}
+        linkTitle={selectedLink?.title || ""}
+        isOpen={isShareDialogOpen && !!selectedLink}
+        onClose={() => setIsShareDialogOpen(false)}
       />
     </div>
   );

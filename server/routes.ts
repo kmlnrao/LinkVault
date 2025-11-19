@@ -534,8 +534,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "targetType and targetIds (array) are required" });
       }
 
-      if (targetType !== "group" && targetType !== "user") {
-        return res.status(400).json({ message: "targetType must be 'group' or 'user'" });
+      if (targetType !== "group" && targetType !== "contact") {
+        return res.status(400).json({ message: "targetType must be 'group' or 'contact'" });
       }
 
       // Create shares
@@ -543,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetIds.map((targetId: string) =>
           storage.createShare(userId, {
             linkId,
-            targetType: targetType === "user" ? "contact" : "group",
+            targetType,
             targetId,
           })
         )

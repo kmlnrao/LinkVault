@@ -470,9 +470,23 @@ export default function LinksPage() {
                           <p className="text-sm text-muted-foreground">{link.institution}</p>
                         )}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(link)} data-testid={`button-copy-shared-${link.id}`}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" data-testid={`button-shared-link-menu-${link.id}`}>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleView(link)} data-testid={`menu-view-shared-${link.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCopyLink(link)} data-testid={`menu-copy-shared-${link.id}`}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Link
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">

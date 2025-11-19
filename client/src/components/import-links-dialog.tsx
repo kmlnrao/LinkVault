@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,6 +43,33 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
     queryKey: ["/api/groups"],
     enabled: isOpen && shareAfterImport && shareTargetType === "group",
   });
+
+  const downloadSampleCSV = () => {
+    // Generate sample CSV with example data
+    const csvContent = `Title,URL,Category,Institution,Bonus Value,Expiration Date,Notes
+Chase Sapphire Preferred,https://www.referyourchasecard.com/6a/EXAMPLE123,Credit Cards,Chase,60000 points,2024-12-31,Earn 60k bonus points after $4k spend in 3 months
+Capital One Venture X,https://capital.one/refer/EXAMPLE456,Credit Cards,Capital One,$200 statement credit,2024-06-30,100k miles + $200 travel credit
+Ally Bank Savings,https://refer.ally.com/SAMPLE789,Bank Accounts,Ally Bank,$100 bonus,,Open account with $500 minimum deposit
+American Express Gold,https://americanexpress.com/refer/DEMO999,Credit Cards,American Express,90000 points,2024-09-15,Great for dining and groceries`;
+
+    // Create a blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", "linkvault_sample_import.csv");
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Sample CSV downloaded",
+      description: "Edit this file and upload it to import your links",
+    });
+  };
 
   const parseCSV = (text: string): ParsedLink[] => {
     const lines = text.split("\n").filter(line => line.trim());
@@ -240,14 +267,24 @@ export function ImportLinksDialog({ isOpen, onClose }: ImportLinksDialogProps) {
             </div>
           </div>
 
-          {/* CSV Format Example */}
+          {/* Download Sample CSV */}
           <div className="space-y-2">
-            <Label>CSV Format Example</Label>
-            <div className="bg-muted p-3 rounded text-xs font-mono">
-              <div>title,url,category,institution,bonusValue,notes</div>
-              <div>Chase Sapphire,https://chase.com/refer/123,Credit Cards,Chase,$200,Great card</div>
-              <div>Amex Platinum,https://amex.com/refer/456,Credit Cards,American Express,75000 points,</div>
+            <div className="flex items-center justify-between">
+              <Label>Need a template?</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={downloadSampleCSV}
+                data-testid="button-download-sample-csv"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Sample CSV
+              </Button>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Download a sample CSV file with example data. Edit it with your links and upload.
+            </p>
           </div>
 
           {/* Share Options */}
